@@ -3,7 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>QuizForge — Turn your slides into quizzes</title>
+<title>MiPrep — Your AI study companion</title>
+<meta name="description" content="MiPrep turns your slides, PDFs, notes and photos into AI quizzes, lessons, courses and flashcards. Free AI-powered study companion built by Festus Mensah.">
+<meta name="keywords" content="MiPrep, AI quiz generator, study app, flashcards, exam prep, learn, Ghana">
+<meta name="author" content="Festus Mensah">
+<meta property="og:title" content="MiPrep — Your AI study companion">
+<meta property="og:description" content="Turn your slides, PDFs and photos into quizzes, lessons, courses and flashcards — powered by AI. Free to use.">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="MiPrep — Your AI study companion">
+<meta name="twitter:description" content="Turn your slides, PDFs and photos into AI quizzes, lessons, courses and flashcards.">
+<meta name="theme-color" content="#7c5cff">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
@@ -30,8 +40,17 @@
   header h1{font-size:2.2rem; letter-spacing:-.5px;}
   header h1 span{background:linear-gradient(90deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; color:transparent;}
   header p{color:var(--muted); margin-top:8px;}
-  #theme-btn{position:absolute; right:0; top:0; background:var(--card); border:1px solid var(--border);
+  #theme-btn{position:fixed; right:14px; top:14px; z-index:40; background:var(--card); border:1px solid var(--border);
     border-radius:12px; padding:8px 12px; cursor:pointer; font-size:1.1rem;}
+  #account-bar{position:fixed; left:14px; top:14px; z-index:40;}
+  .signin-pill{background:var(--card); border:1px solid var(--border); color:var(--text);
+    border-radius:999px; padding:9px 18px; font-size:.95rem; font-weight:600; cursor:pointer; transition:.15s;}
+  .signin-pill:hover{border-color:var(--accent);}
+  .avatar-btn{width:42px; height:42px; border-radius:50%; border:none; cursor:pointer;
+    background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff;
+    font-size:1.15rem; font-weight:800; display:flex; align-items:center; justify-content:center;
+    box-shadow:0 4px 14px rgba(124,92,255,.4); transition:.15s;}
+  .avatar-btn:hover{transform:scale(1.08);}
   .panel{width:100%; max-width:640px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:28px; box-shadow:0 18px 50px rgba(0,0,0,.25);}
   .hidden{display:none !important;}
 
@@ -180,7 +199,7 @@
     body{padding:14px 8px 40px;}
     header h1{font-size:1.7rem;}
     header{margin-top:44px;}
-    #account-bar{top:-40px;}
+  
     #theme-btn{top:-40px;}
     .panel{padding:18px 14px;}
     .tabs{gap:6px;}
@@ -225,12 +244,12 @@
 </head>
 <body>
 <header>
-  <h1>⚡ Quiz<span>Forge</span></h1>
+  <h1>⚡ Mi<span>Prep</span></h1>
   <p>Upload your slides or notes — get quizzed, taught, or drilled with flashcards.</p>
   <p style="margin-top:4px; font-size:.85rem; color:var(--muted);">Built by <strong style="background:linear-gradient(90deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; color:transparent;">Festus Mensah</strong></p>
   <button id="theme-btn" title="Toggle light/dark">🌙</button>
-  <div id="account-bar" style="position:absolute; left:0; top:0;">
-    <button class="btn ghost small" id="account-btn">👤 Sign in</button>
+  <div id="account-bar">
+    <button id="account-btn" class="signin-pill">Sign in</button>
   </div>
 </header>
 
@@ -1022,14 +1041,14 @@ $('newfiles').onclick = () => { quizFiles.list = []; quizFiles.render(); show('u
 /* ---------------- export printable quiz ---------------- */
 $('export-quiz').onclick = () => {
   const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
-  let html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>QuizForge — printable quiz</title>
+  let html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>MiPrep — printable quiz</title>
   <style>body{font-family:Georgia,serif;max-width:800px;margin:40px auto;padding:0 20px;line-height:1.6;color:#111}
   h1{border-bottom:3px solid #333;padding-bottom:8px} .q{margin:18px 0 6px;font-weight:bold}
   ol.opts{list-style:upper-alpha;margin-left:28px} .key{page-break-before:always}
   .blank{border-bottom:1px solid #999;display:inline-block;min-width:280px}</style></head><body>
-  <h1>⚡ QuizForge — ${esc(quizSource || 'Quiz')}</h1>
+  <h1>⚡ MiPrep — ${esc(quizSource || 'Quiz')}</h1>
   <p>${quiz.length} questions · ${esc($('difficulty').value)} difficulty · generated ${new Date().toLocaleDateString()}</p>
-  <p style="font-style:italic; color:#555;">QuizForge — built by Festus Mensah</p>`;
+  <p style="font-style:italic; color:#555;">MiPrep — built by Festus Mensah</p>`;
   quiz.forEach((q,i) => {
     html += `<div class="q">${i+1}. ${esc(q.question)}</div>`;
     if (q.type === 'short') html += `<p>Answer: <span class="blank">&nbsp;</span></p>`;
@@ -1043,7 +1062,7 @@ $('export-quiz').onclick = () => {
   const blob = new Blob([html], {type:'text/html'});
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'quizforge_printable.html';
+  a.download = 'miprep_printable.html';
   a.click();
   URL.revokeObjectURL(a.href);
   alert('📥 Downloaded! Open the file and use your browser\'s Print → "Save as PDF" for a PDF copy.');
@@ -1762,7 +1781,16 @@ let authUser  = localStorage.getItem('qf-user') || null;
 let syncTimer = null;
 
 function updateAccountBtn(){
-  $('account-btn').textContent = authUser ? `👤 ${authUser}` : '👤 Sign in';
+  const b = $('account-btn');
+  if (authUser){
+    b.className = 'avatar-btn';
+    b.textContent = authUser.charAt(0).toUpperCase();
+    b.title = `Signed in as ${authUser}`;
+  } else {
+    b.className = 'signin-pill';
+    b.textContent = 'Sign in';
+    b.title = 'Sign in to sync your library';
+  }
 }
 $('account-btn').onclick = () => {
   if (authUser){
@@ -1898,7 +1926,7 @@ if (authToken) pullSync().then(checkResumables);
 checkResumables();
 </script>
 <footer style="margin-top:40px; text-align:center; color:var(--muted); font-size:.85rem; line-height:1.8;">
-  <div style="font-size:1.05rem;">⚡ <strong>QuizForge</strong></div>
+  <div style="font-size:1.05rem;">⚡ <strong>MiPrep</strong></div>
   <div>Designed &amp; built by <strong style="background:linear-gradient(90deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; color:transparent; font-family:Georgia,'Times New Roman',serif; font-style:italic; font-size:1.05rem;">Festus Mensah</strong></div>
   <div>Accra, Ghana 🇬🇭 · © <span id="footer-year"></span></div>
   <script>document.getElementById('footer-year').textContent = new Date().getFullYear();</script>

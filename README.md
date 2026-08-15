@@ -1,4 +1,4 @@
-# ⚡ QuizForge
+# ⚡ MiPrep
 
 **Designed & built by Festus Mensah** — Accra, Ghana 🇬🇭
 
