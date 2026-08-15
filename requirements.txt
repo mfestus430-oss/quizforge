@@ -1,0 +1,6 @@
+flask
+python-pptx
+pypdf
+python-docx
+pytesseract
+pillow

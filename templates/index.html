@@ -1,0 +1,1907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuizForge — Turn your slides into quizzes</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<style>
+  :root{
+    --bg:#0f1220; --card:#1a1f35; --card2:#222848; --text:#eef0ff; --muted:#9aa3c7;
+    --accent:#7c5cff; --accent2:#00d4a6; --wrong:#ff5c7a; --warn:#ffb84d; --radius:18px;
+    --border:#2b3155; --border2:#3a4272; --code:#151936;
+  }
+  body.light{
+    --bg:#f2f4fb; --card:#ffffff; --card2:#eef0f9; --text:#1a1f35; --muted:#5a6285;
+    --accent:#6a48f0; --accent2:#00a37f; --wrong:#e0345c; --warn:#d98c1f;
+    --border:#d8dcee; --border2:#c3c9e6; --code:#e6e9f6;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--text);
+    min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:24px 16px 60px;
+    background-image:radial-gradient(circle at 15% 20%, rgba(124,92,255,.14), transparent 40%),
+                     radial-gradient(circle at 85% 80%, rgba(0,212,166,.10), transparent 40%);
+    transition:background .3s, color .3s;
+  }
+  header{text-align:center; margin:10px 0 22px; position:relative; width:100%; max-width:640px;}
+  header h1{font-size:2.2rem; letter-spacing:-.5px;}
+  header h1 span{background:linear-gradient(90deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; color:transparent;}
+  header p{color:var(--muted); margin-top:8px;}
+  #theme-btn{position:absolute; right:0; top:0; background:var(--card); border:1px solid var(--border);
+    border-radius:12px; padding:8px 12px; cursor:pointer; font-size:1.1rem;}
+  .panel{width:100%; max-width:640px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:28px; box-shadow:0 18px 50px rgba(0,0,0,.25);}
+  .hidden{display:none !important;}
+
+  .tabs{display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap; justify-content:center;}
+  .tab{background:var(--card); border:1px solid var(--border); color:var(--muted); border-radius:12px;
+    padding:10px 16px; font-size:.95rem; font-weight:600; cursor:pointer; transition:.15s;}
+  .tab:hover{color:var(--text);}
+  .tab.active{background:linear-gradient(90deg,var(--accent),#9b7bff); color:#fff; border-color:transparent;}
+
+  .drop{border:2px dashed var(--border2); border-radius:var(--radius); padding:38px 20px; text-align:center;
+    cursor:pointer; transition:.2s; background:var(--card2);}
+  .drop:hover,.drop.drag{border-color:var(--accent);}
+  .drop .icon{font-size:2.4rem;}
+  .drop p{margin-top:10px; color:var(--muted);}
+  .drop strong{color:var(--text);}
+  .filelist{margin-top:14px; display:flex; flex-wrap:wrap; gap:8px;}
+  .chip{background:var(--card2); border:1px solid var(--border); border-radius:999px; padding:6px 14px; font-size:.85rem; display:flex; gap:8px; align-items:center;}
+  .chip button{background:none;border:none;color:var(--wrong);cursor:pointer;font-size:1rem;}
+  .row{display:flex; align-items:center; justify-content:space-between; margin-top:20px; gap:14px; flex-wrap:wrap;}
+  .opts-grid{display:flex; gap:14px 22px; flex-wrap:wrap; margin-top:16px; align-items:center;}
+  label{color:var(--muted); font-size:.9rem;}
+  select,input[type=text]{background:var(--card2); color:var(--text); border:1px solid var(--border2); border-radius:10px; padding:8px 12px; font-size:1rem;}
+  .check{display:flex; align-items:center; gap:8px; color:var(--muted); font-size:.92rem; cursor:pointer;}
+  .check input{width:17px; height:17px; accent-color:var(--accent);}
+  .btn{background:linear-gradient(90deg,var(--accent),#9b7bff); color:#fff; border:none; border-radius:12px;
+    padding:13px 26px; font-size:1.05rem; font-weight:600; cursor:pointer; transition:.15s;}
+  .btn:hover{transform:translateY(-2px); box-shadow:0 8px 24px rgba(124,92,255,.35);}
+  .btn:disabled{opacity:.45; cursor:not-allowed; transform:none; box-shadow:none;}
+  .btn.ghost{background:var(--card2); border:1px solid var(--border2); color:var(--text);}
+  .btn.small{padding:9px 16px; font-size:.92rem;}
+  .error{color:var(--wrong); margin-top:14px; font-size:.95rem;}
+  .hint{color:var(--muted); font-size:.85rem; margin-top:10px;}
+
+  .meta{display:flex; justify-content:space-between; color:var(--muted); font-size:.9rem; margin-bottom:14px; align-items:center; flex-wrap:wrap; gap:8px;}
+  .timer{font-weight:700; font-size:1.05rem; color:var(--accent2); background:var(--card2); border-radius:10px; padding:4px 12px;}
+  .timer.low{color:var(--wrong); animation:pulse 1s infinite;}
+  @keyframes pulse{50%{opacity:.5;}}
+  .bar{height:8px; background:var(--card2); border-radius:99px; overflow:hidden; margin-bottom:24px;}
+  .bar div{height:100%; width:0; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width .35s;}
+  .qtext{font-size:1.2rem; line-height:1.55; margin-bottom:22px;}
+  .opts{display:flex; flex-direction:column; gap:12px;}
+  .opt{background:var(--card2); border:2px solid transparent; border-radius:14px; padding:15px 18px;
+    cursor:pointer; font-size:1rem; text-align:left; color:var(--text); transition:.15s; display:flex; gap:12px; align-items:center;}
+  .opt:hover{border-color:var(--accent);}
+  .opt .letter{background:var(--border2); border-radius:8px; width:30px; height:30px; display:flex; align-items:center; justify-content:center; font-weight:700; flex-shrink:0; color:var(--text);}
+  .opt.correct{border-color:var(--accent2); background:rgba(0,212,166,.12);}
+  .opt.correct .letter{background:var(--accent2); color:#04281f;}
+  .opt.wrong{border-color:var(--wrong); background:rgba(255,92,122,.1);}
+  .opt.wrong .letter{background:var(--wrong); color:#fff;}
+  .opt.picked{border-color:var(--accent);}
+  .short-box{display:flex; gap:10px; margin-top:6px;}
+  .short-box input{flex:1;}
+  .feedback{margin-top:18px; padding:14px 16px; border-radius:12px; font-size:.95rem; line-height:1.5;}
+  .feedback.good{background:rgba(0,212,166,.12); border:1px solid var(--accent2);}
+  .feedback.bad{background:rgba(255,92,122,.1); border:1px solid var(--wrong);}
+  .feedback.mid{background:rgba(255,184,77,.12); border:1px solid var(--warn);}
+  .navrow{display:flex; justify-content:flex-end; margin-top:22px; gap:10px;}
+
+  .score-circle{width:150px; height:150px; border-radius:50%; margin:10px auto 20px; display:flex; align-items:center;
+    justify-content:center; font-size:2rem; font-weight:800;
+    background:conic-gradient(var(--accent2) calc(var(--pct)*1%), var(--card2) 0);}
+  .score-circle .inner{width:118px;height:118px;border-radius:50%;background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .score-circle small{font-size:.8rem; color:var(--muted); font-weight:400;}
+  .verdict{text-align:center; font-size:1.15rem; margin-bottom:6px;}
+  .sub{text-align:center; color:var(--muted); margin-bottom:24px;}
+  .review{margin-top:10px; display:flex; flex-direction:column; gap:10px; max-height:300px; overflow-y:auto; padding-right:6px;}
+  .rev{background:var(--card2); border-radius:12px; padding:12px 14px; font-size:.9rem; line-height:1.45;}
+  .rev .q{font-weight:600;}
+  .rev .a{color:var(--accent2);}
+  .rev .x{color:var(--wrong);}
+  .center{display:flex; gap:12px; justify-content:center; margin-top:24px; flex-wrap:wrap;}
+  .spinner{margin:30px auto; width:44px; height:44px; border:4px solid var(--card2); border-top-color:var(--accent); border-radius:50%; animation:spin 1s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .loading-text{text-align:center; color:var(--muted); line-height:1.6;}
+
+  .teach-input{width:100%; background:var(--card2); border:1px solid var(--border2); border-radius:12px;
+    color:var(--text); padding:13px 16px; font-size:1rem; font-family:inherit;}
+  .teach-input:focus{outline:none; border-color:var(--accent);}
+  .levels{display:flex; gap:10px; margin:16px 0; flex-wrap:wrap;}
+  .level{background:var(--card2); border:2px solid var(--border2); border-radius:12px; padding:10px 16px;
+    cursor:pointer; color:var(--text); font-size:.95rem; transition:.15s;}
+  .level.active{border-color:var(--accent2); background:rgba(0,212,166,.1);}
+  .lesson{background:transparent; border-radius:14px; padding:2px; line-height:1.7; font-size:1rem;
+    max-height:56vh; overflow-y:auto;}
+  .lesson > .blk{background:var(--card2);}
+  .lesson h1,.lesson h2,.lesson h3{margin:14px 0 8px; color:var(--accent);}
+  .lesson p{margin:8px 0;}
+  .lesson ul,.lesson ol{margin:8px 0 8px 22px;}
+  .lesson li{margin:4px 0;}
+  .lesson code{background:var(--code); padding:2px 6px; border-radius:6px; font-size:.9em;}
+  .lesson pre{background:var(--code); padding:12px; border-radius:10px; overflow-x:auto; margin:10px 0;}
+  .lesson strong{color:var(--accent2);}
+  .lesson .bubble-q{background:rgba(124,92,255,.15); border:1px solid var(--accent);
+    border-radius:12px; padding:10px 14px; margin:14px 0 6px; font-weight:600;}
+  .math-block{text-align:center; margin:14px 0; padding:10px; background:var(--code); border-radius:10px; overflow-x:auto;}
+  .katex{font-size:1.06em;}
+  .followup{display:flex; gap:10px; margin-top:16px;}
+  .followup input{flex:1;}
+  .divider{border:none; border-top:1px solid var(--border); margin:18px 0;}
+
+  /* block system: vertical chat of blocks; each block flips horizontally between levels */
+  @keyframes flipInRight{from{transform:translateX(60px) rotateY(14deg); opacity:0;} to{transform:none; opacity:1;}}
+  @keyframes flipInLeft{from{transform:translateX(-60px) rotateY(-14deg); opacity:0;} to{transform:none; opacity:1;}}
+  .blk{background:var(--card); border:1px solid var(--border); border-radius:14px; padding:16px 18px; margin:0 0 16px;}
+  .blk-head{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px;}
+  .page-tag{display:inline-block; background:rgba(0,212,166,.12); border:1px solid var(--accent2);
+    border-radius:999px; padding:3px 12px; font-size:.8rem;}
+  .blk-nav{margin-left:auto; display:flex; align-items:center; gap:6px;}
+  .blk-nav button{background:var(--card2); border:1px solid var(--border2); color:var(--text);
+    border-radius:8px; padding:2px 10px; cursor:pointer; font-size:.95rem;}
+  .blk-nav button:disabled{opacity:.35; cursor:default;}
+  .blk-nav span{color:var(--muted); font-size:.78rem;}
+  .blk-body.flip-right{animation:flipInRight .35s ease;}
+  .blk-body.flip-left{animation:flipInLeft .35s ease;}
+  .blk .bubble-q{margin-top:0;}
+  .blk{touch-action:pan-y; user-select:text;}
+  .blk-actions{display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;}
+  .blk-actions button{background:transparent; border:1px solid var(--border2); color:var(--muted);
+    border-radius:8px; padding:3px 10px; font-size:.78rem; cursor:pointer; transition:.15s;}
+  .blk-actions button:hover{color:var(--text); border-color:var(--accent);}
+  .reply-chip{display:flex; align-items:center; gap:8px; background:rgba(124,92,255,.12);
+    border-left:3px solid var(--accent); border-radius:8px; padding:8px 12px; margin:8px 0;
+    font-size:.85rem; color:var(--muted);}
+  .reply-chip em{flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text);}
+  .reply-chip button{background:none; border:none; color:var(--wrong); cursor:pointer; font-size:1rem;}
+
+  /* flashcards */
+  .fcard{perspective:1200px; height:280px; cursor:pointer; margin:10px 0;}
+  .fcard-inner{position:relative; width:100%; height:100%; transition:transform .5s; transform-style:preserve-3d;}
+  .fcard.flipped .fcard-inner{transform:rotateY(180deg);}
+  .fface{position:absolute; inset:0; backface-visibility:hidden; border-radius:16px; display:flex;
+    align-items:center; justify-content:center; padding:26px; text-align:center; font-size:1.15rem; line-height:1.5;
+    background:var(--card2); border:2px solid var(--border2);}
+  .fface.back{transform:rotateY(180deg); border-color:var(--accent2); background:rgba(0,212,166,.08);}
+  .fc-meta{text-align:center; color:var(--muted); font-size:.9rem; margin-top:4px;}
+
+  /* history */
+  .hist-item{background:var(--card2); border-radius:12px; padding:14px 16px; margin-bottom:10px;
+    display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;}
+  .hist-item .pct{font-weight:800; font-size:1.2rem;}
+  .hist-item .pct.good{color:var(--accent2);} .hist-item .pct.mid{color:var(--warn);} .hist-item .pct.bad{color:var(--wrong);}
+  .hist-item small{color:var(--muted); display:block;}
+
+  /* mobile polish */
+  @media (max-width: 560px){
+    body{padding:14px 8px 40px;}
+    header h1{font-size:1.7rem;}
+    header{margin-top:44px;}
+    #account-bar{top:-40px;}
+    #theme-btn{top:-40px;}
+    .panel{padding:18px 14px;}
+    .tabs{gap:6px;}
+    .tab{padding:8px 11px; font-size:.85rem;}
+    .qtext{font-size:1.05rem;}
+    .opt{padding:12px 13px; font-size:.93rem;}
+    .btn{padding:11px 18px; font-size:.98rem;}
+    .fcard{height:230px;}
+    .lesson{max-height:60vh;}
+  }
+
+  /* course mode */
+  .syllabus{display:flex; flex-direction:column; gap:10px; margin-top:14px;}
+  .sess{background:var(--card2); border:2px solid var(--border); border-radius:14px; padding:14px 16px;
+    display:flex; align-items:center; gap:14px; transition:.15s;}
+  .sess .snum{width:34px; height:34px; border-radius:50%; background:var(--border2); display:flex;
+    align-items:center; justify-content:center; font-weight:700; flex-shrink:0;}
+  .sess.done .snum{background:var(--accent2); color:#04281f;}
+  .sess{cursor:pointer;}
+  .sess:hover{background:rgba(124,92,255,.1); border-color:var(--accent);}
+  .sess.current{border-color:var(--accent);}
+  .sess.open{opacity:.8;}
+  .sess .sinfo{flex:1;}
+  .sess .sinfo small{color:var(--muted); display:block;}
+  .sess .badge{font-size:1.2rem;}
+  .course-head{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:6px;}
+  .cp-title{font-weight:700; margin:18px 0 10px; color:var(--accent);}
+
+  /* resume banner */
+  .resume-box{background:rgba(124,92,255,.12); border:1px solid var(--accent); border-radius:14px;
+    padding:14px 16px; margin-bottom:18px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;}
+  .resume-box .info{flex:1; min-width:180px;}
+  .resume-box .info strong{display:block;}
+  .resume-box .info small{color:var(--muted);}
+
+  /* lesson & course library (like chat history) */
+  .lib-item{background:var(--card2); border:1px solid var(--border); border-radius:12px;
+    padding:11px 14px; margin-bottom:8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+  .lib-item .linfo{flex:1; min-width:150px;}
+  .lib-item small{color:var(--muted); display:block;}
+</style>
+</head>
+<body>
+<header>
+  <h1>⚡ Quiz<span>Forge</span></h1>
+  <p>Upload your slides or notes — get quizzed, taught, or drilled with flashcards.</p>
+  <p style="margin-top:4px; font-size:.85rem; color:var(--muted);">Built by <strong style="background:linear-gradient(90deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; color:transparent;">Festus Mensah</strong></p>
+  <button id="theme-btn" title="Toggle light/dark">🌙</button>
+  <div id="account-bar" style="position:absolute; left:0; top:0;">
+    <button class="btn ghost small" id="account-btn">👤 Sign in</button>
+  </div>
+</header>
+
+<!-- ACCOUNT MODAL -->
+<div id="account-modal" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:50; display:flex; align-items:center; justify-content:center; padding:16px;">
+  <div class="panel" style="max-width:400px;">
+    <h2 style="margin-bottom:6px;">👤 Your account</h2>
+    <p class="hint" style="margin-bottom:16px;">Sign in to back up your lessons, courses &amp; history — and continue on any device.</p>
+    <div id="google-signin-wrap" class="hidden" style="margin-bottom:14px;">
+      <div id="google-signin-btn" style="display:flex; justify-content:center;"></div>
+      <div style="text-align:center; color:var(--muted); font-size:.85rem; margin-top:10px;">— or with username &amp; password —</div>
+    </div>
+    <input class="teach-input" id="auth-user" placeholder="username" style="margin-bottom:10px;" autocomplete="username">
+    <input class="teach-input" id="auth-pass" type="password" placeholder="password (min 6 chars)" autocomplete="current-password">
+    <div class="center" style="margin-top:18px;">
+      <button class="btn" id="auth-login">Sign in</button>
+      <button class="btn ghost" id="auth-register">Create account</button>
+      <button class="btn ghost" id="auth-close">Close</button>
+    </div>
+    <div class="error hidden" id="auth-error"></div>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" id="tab-quiz">📝 Quiz Me</button>
+  <button class="tab" id="tab-teach">🍎 Teach Me</button>
+  <button class="tab" id="tab-course">🎓 Course</button>
+  <button class="tab" id="tab-cards">🗂️ Flashcards</button>
+  <button class="tab" id="tab-history">📊 History</button>
+</div>
+
+<!-- QUIZ SETUP -->
+<div class="panel" id="upload-panel">
+  <div class="resume-box hidden" id="resume-quiz-box">
+    <div class="info"><strong>⏸️ Unfinished quiz found</strong><small id="resume-quiz-info"></small></div>
+    <button class="btn small" id="resume-quiz-btn">▶️ Continue</button>
+    <button class="btn ghost small" id="discard-quiz-btn">🗑️ Discard</button>
+  </div>
+  <div class="drop" id="drop">
+    <div class="icon">📂</div>
+    <p><strong>Click to choose files</strong> or drag &amp; drop here</p>
+    <p style="font-size:.85rem; margin-top:6px;">PPTX · PDF · DOCX · TXT · MD · 🖼️ Images (PNG/JPG/WEBP)</p>
+    <input type="file" id="file-input" multiple accept=".pptx,.pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.webp,.bmp,.tif,.tiff,image/*" hidden>
+  </div>
+  <div class="filelist" id="filelist"></div>
+  <div class="opts-grid">
+    <div><label for="numq">Questions:&nbsp;</label>
+      <select id="numq">
+        <option>5</option><option selected>10</option><option>15</option><option>20</option><option>25</option>
+        <option>50</option><option>100</option><option>250</option><option>500</option>
+      </select>
+    </div>
+    <div><label for="difficulty">Difficulty:&nbsp;</label>
+      <select id="difficulty">
+        <option value="easy">😌 Easy</option>
+        <option value="medium" selected>🎯 Medium</option>
+        <option value="hard">🔥 Hard</option>
+      </select>
+    </div>
+    <div><label for="timer-sel">⏱️ Timer:&nbsp;</label>
+      <select id="timer-sel">
+        <option value="0" selected>Off</option>
+        <option value="10">10s / question</option>
+        <option value="20">20s / question</option>
+        <option value="30">30s / question</option>
+        <option value="60">60s / question</option>
+      </select>
+    </div>
+    <label class="check"><input type="checkbox" id="exam-mode"> 🎓 Exam mode (results only at the end)</label>
+    <label class="check"><input type="checkbox" id="short-answers"> ✍️ Include typed short-answers (AI-graded)</label>
+  </div>
+  <div class="row">
+    <span class="hint" id="bigq-hint"></span>
+    <button class="btn" id="generate" disabled>Generate quiz ✨</button>
+  </div>
+  <div class="error hidden" id="error"></div>
+</div>
+
+<!-- TEACH SETUP -->
+<div class="panel hidden" id="teach-panel">
+  <div id="lesson-library"></div>
+  <label style="display:block; margin-bottom:8px;">What do you want to learn? (or leave empty and just upload material)</label>
+  <input class="teach-input" id="topic" placeholder="e.g. fractions, standard deviation, photosynthesis…">
+  <div class="levels">
+    <button class="level active" data-level="std">✨ Standard</button>
+    <button class="level" data-level="kid">🧒 Like I'm 7</button>
+    <button class="level" data-level="teen">🎒 High school</button>
+    <button class="level" data-level="facts">⚡ Quick facts</button>
+  </div>
+  <div class="drop" id="teach-drop" style="padding:26px 20px;">
+    <div class="icon">📂</div>
+    <p><strong>Optional:</strong> add slides, notes or images to be taught from</p>
+    <p style="font-size:.85rem; margin-top:6px;">🖼️ Images are <em>seen</em> by the AI — diagrams, charts &amp; formulas included</p>
+    <input type="file" id="teach-file-input" multiple accept=".pptx,.pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.webp,.bmp,.tif,.tiff,image/*" hidden>
+  </div>
+  <div class="filelist" id="teach-filelist"></div>
+  <div class="row">
+    <span></span>
+    <button class="btn" id="teach-go">Teach me! 🍎</button>
+  </div>
+  <div class="error hidden" id="teach-error"></div>
+</div>
+
+<!-- LESSON -->
+<div class="panel hidden" id="lesson-panel">
+  <div class="levels" id="lesson-levels" style="margin:0 0 8px;">
+    <span class="hint" style="align-self:center;">Explain as:</span>
+    <button class="level" data-level="std">✨ Standard</button>
+    <button class="level" data-level="kid">🧒 Like I'm 7</button>
+    <button class="level" data-level="teen">🎒 High school</button>
+    <button class="level" data-level="facts">⚡ Quick facts</button>
+  </div>
+  <div class="lesson" id="lesson"></div>
+  <div class="filelist" id="followup-files"></div>
+  <div id="reply-bar"></div>
+  <div class="followup">
+    <button class="btn ghost small" id="attach-btn" title="Attach files (PDF, slides, images…)">📎</button>
+    <button class="btn ghost small" id="camera-btn" title="Snap a photo with your camera">📷</button>
+    <input type="file" id="followup-file-input" multiple accept=".pptx,.pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.webp,.bmp,.tif,.tiff,image/*" hidden>
+    <input type="file" id="camera-input" accept="image/*" capture="environment" hidden>
+    <input class="teach-input" id="followup-q" placeholder="Ask a follow-up… or attach a photo/PDF 📎">
+    <button class="btn" id="followup-send">Ask</button>
+  </div>
+  <div class="center">
+    <button class="btn ghost small" id="lesson-new">🍎 New lesson</button>
+    <button class="btn ghost small" id="lesson-quiz">📝 Quiz me on this</button>
+  </div>
+  <div class="error hidden" id="lesson-error"></div>
+</div>
+
+<!-- COURSE SETUP -->
+<div class="panel hidden" id="course-setup">
+  <div id="course-library"></div>
+  <label style="display:block; margin-bottom:8px;">What should the course teach? (topic, or upload a book/slides/notes)</label>
+  <input class="teach-input" id="course-topic" placeholder="e.g. probability, cell biology, financial accounting…">
+  <div class="levels" id="course-levels">
+    <button class="level active" data-level="std">✨ Standard</button>
+    <button class="level" data-level="kid">🧒 Like I'm 7</button>
+    <button class="level" data-level="teen">🎒 High school</button>
+    <button class="level" data-level="facts">⚡ Quick facts</button>
+  </div>
+  <div class="drop" id="course-drop" style="padding:26px 20px;">
+    <div class="icon">📚</div>
+    <p><strong>Optional:</strong> upload the book / slides / notes to base the course on</p>
+  </div>
+  <input type="file" id="course-file-input" multiple accept=".pptx,.pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.webp,.bmp,.tif,.tiff,image/*" hidden>
+  <div class="filelist" id="course-filelist"></div>
+  <div class="row">
+    <span class="hint">The AI designs a syllabus, teaches session by session, and only unlocks the next session when you pass a checkpoint ✅</span>
+    <button class="btn" id="course-go">Build my course 🎓</button>
+  </div>
+  <div class="error hidden" id="course-error"></div>
+</div>
+
+<!-- COURSE SYLLABUS -->
+<div class="panel hidden" id="course-syllabus">
+  <div class="course-head">
+    <h2 id="course-title"></h2>
+    <span class="hint" id="course-progress"></span>
+  </div>
+  <div class="syllabus" id="syllabus"></div>
+  <div class="center">
+    <button class="btn ghost small" id="course-quit">🗑️ Abandon course</button>
+  </div>
+  <div class="error hidden" id="syllabus-error"></div>
+</div>
+
+<!-- COURSE SESSION -->
+<div class="panel hidden" id="course-session">
+  <div class="meta"><span id="cs-label"></span><span id="cs-step"></span></div>
+  <div class="bar"><div id="cs-bar"></div></div>
+  <div class="levels" id="cs-levels" style="margin:0 0 8px;">
+    <span class="hint" style="align-self:center;">Explain as:</span>
+    <button class="level" data-level="std">✨ Standard</button>
+    <button class="level" data-level="kid">🧒 Like I'm 7</button>
+    <button class="level" data-level="teen">🎒 High school</button>
+    <button class="level" data-level="facts">⚡ Quick facts</button>
+  </div>
+  <div class="lesson" id="cs-lesson"></div>
+  <div class="filelist" id="cs-files"></div>
+  <div id="cs-reply-bar"></div>
+  <div class="followup" id="cs-askrow">
+    <button class="btn ghost small" id="cs-attach-btn" title="Attach files">📎</button>
+    <button class="btn ghost small" id="cs-camera-btn" title="Snap a photo">📷</button>
+    <input type="file" id="cs-file-input" multiple accept=".pptx,.pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.webp,.bmp,.tif,.tiff,image/*" hidden>
+    <input type="file" id="cs-camera-input" accept="image/*" capture="environment" hidden>
+    <input class="teach-input" id="cs-ask" placeholder="Confused? Ask… or attach a photo/PDF 📎">
+    <button class="btn" id="cs-ask-send">Ask</button>
+  </div>
+  <div id="cs-checkpoint" class="hidden">
+    <div class="cp-title">✅ Checkpoint — show me you got it:</div>
+    <div class="qtext" id="cs-qtext" style="font-size:1.05rem;"></div>
+    <div class="opts" id="cs-qopts"></div>
+    <div class="feedback hidden" id="cs-feedback"></div>
+  </div>
+  <div class="navrow">
+    <button class="btn ghost hidden" id="cs-back">← Syllabus</button>
+    <span style="flex:1"></span>
+    <button class="btn" id="cs-continue">I'm ready — test me ✅</button>
+  </div>
+  <div class="error hidden" id="cs-error"></div>
+</div>
+
+<!-- FLASHCARDS SETUP -->
+<div class="panel hidden" id="cards-panel">
+  <div class="resume-box hidden" id="resume-cards-box">
+    <div class="info"><strong>⏸️ Previous flashcard deck found</strong><small id="resume-cards-info"></small></div>
+    <button class="btn small" id="resume-cards-btn">▶️ Continue</button>
+    <button class="btn ghost small" id="discard-cards-btn">🗑️ Discard</button>
+  </div>
+  <div class="drop" id="cards-drop">
+    <div class="icon">🗂️</div>
+    <p><strong>Add slides or notes</strong> to turn into flashcards</p>
+    <p style="font-size:.85rem; margin-top:6px;">PPTX · PDF · DOCX · TXT · MD · Images</p>
+    <input type="file" id="cards-file-input" multiple accept=".pptx,.pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.webp,.bmp,.tif,.tiff,image/*" hidden>
+  </div>
+  <div class="filelist" id="cards-filelist"></div>
+  <div class="row">
+    <div><label for="cards-count">Cards:&nbsp;</label>
+      <select id="cards-count"><option>10</option><option selected>20</option><option>30</option><option>40</option><option>60</option></select>
+    </div>
+    <button class="btn" id="cards-go" disabled>Make flashcards 🗂️</button>
+  </div>
+  <div class="error hidden" id="cards-error"></div>
+</div>
+
+<!-- FLASHCARD PLAYER -->
+<div class="panel hidden" id="cards-player">
+  <div class="meta"><span id="fc-count"></span><span>tap card to flip</span></div>
+  <div class="fcard" id="fcard">
+    <div class="fcard-inner">
+      <div class="fface front" id="fc-front"></div>
+      <div class="fface back" id="fc-back"></div>
+    </div>
+  </div>
+  <div class="fc-meta" id="fc-progress"></div>
+  <div class="center">
+    <button class="btn ghost small" id="fc-prev">← Prev</button>
+    <button class="btn ghost small" id="fc-shuffle">🔀 Shuffle</button>
+    <button class="btn small" id="fc-next">Next →</button>
+  </div>
+  <div class="center">
+    <button class="btn ghost small" id="fc-new">📂 New cards</button>
+  </div>
+</div>
+
+<!-- HISTORY -->
+<div class="panel hidden" id="history-panel">
+  <h2 style="margin-bottom:16px;">📊 Your quiz history</h2>
+  <div id="hist-list"></div>
+  <div class="center">
+    <button class="btn ghost small" id="hist-clear">🗑️ Clear history</button>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div class="panel hidden" id="loading-panel">
+  <div class="spinner"></div>
+  <p class="loading-text" id="loading-text">Working…</p>
+</div>
+
+<!-- QUIZ -->
+<div class="panel hidden" id="quiz-panel">
+  <div class="meta">
+    <span id="q-count"></span>
+    <span class="timer hidden" id="q-timer"></span>
+    <span id="q-score"></span>
+  </div>
+  <div class="bar"><div id="bar-fill"></div></div>
+  <div class="qtext" id="q-text"></div>
+  <div class="opts" id="q-opts"></div>
+  <div class="short-box hidden" id="short-box">
+    <input type="text" class="teach-input" id="short-input" placeholder="Type your answer…">
+    <button class="btn" id="short-submit">Submit</button>
+  </div>
+  <div class="feedback hidden" id="feedback"></div>
+  <div class="navrow">
+    <button class="btn ghost hidden" id="prev">← Prev</button>
+    <span style="flex:1"></span>
+    <button class="btn hidden" id="next">Next →</button>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div class="panel hidden" id="result-panel">
+  <div class="score-circle" id="circle"><div class="inner"><span id="pct-label"></span><small id="score-label"></small></div></div>
+  <div class="verdict" id="verdict"></div>
+  <div class="sub" id="sub"></div>
+  <div class="review" id="review"></div>
+  <div class="center">
+    <button class="btn" id="retry">🔁 Retake quiz</button>
+    <button class="btn ghost" id="export-quiz">📥 Export printable quiz</button>
+    <button class="btn ghost" id="newfiles">📂 New files</button>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+let files = [], quiz = [], idx = 0, score = 0, answers = [], engineUsed = 'ai';
+let examMode = false, timerSecs = 0, timerHandle = null, timeLeft = 0;
+let quizSource = '';
+
+/* ---------------- theme ---------------- */
+function applyTheme(t){
+  document.body.classList.toggle('light', t === 'light');
+  $('theme-btn').textContent = t === 'light' ? '☀️' : '🌙';
+  localStorage.setItem('qf-theme', t);
+}
+$('theme-btn').onclick = () => applyTheme(document.body.classList.contains('light') ? 'dark' : 'light');
+applyTheme(localStorage.getItem('qf-theme') || 'dark');
+
+/* ---------------- panels & tabs ---------------- */
+const PANELS = ['upload-panel','loading-panel','quiz-panel','result-panel','teach-panel','lesson-panel',
+                'cards-panel','cards-player','history-panel','course-setup','course-syllabus','course-session'];
+function show(panel){ PANELS.forEach(p => $(p).classList.add('hidden')); $(panel).classList.remove('hidden'); }
+
+const TABS = {quiz:'tab-quiz', teach:'tab-teach', course:'tab-course', cards:'tab-cards', history:'tab-history'};
+let mode = 'quiz';
+Object.entries(TABS).forEach(([m, id]) => $(id).onclick = () => switchMode(m));
+function switchMode(m){
+  mode = m;
+  Object.entries(TABS).forEach(([mm, id]) => $(id).classList.toggle('active', mm === m));
+  clearTimer();
+  checkResumables();
+  if (m === 'quiz') show('upload-panel');
+  else if (m === 'teach') show('teach-panel');
+  else if (m === 'course') show(course ? 'course-syllabus' : 'course-setup'), course && renderSyllabus();
+  else if (m === 'cards') show(cardsDeck.length ? 'cards-player' : 'cards-panel');
+  else { renderHistory(); show('history-panel'); }
+}
+
+/* ---------------- file pickers (generic) ---------------- */
+function wireDrop(dropId, inputId, listId, store, onChange){
+  const drop = $(dropId), input = $(inputId);
+  const isImg = n => /\.(png|jpe?g|webp|bmp|tiff?)$/i.test(n);
+  function render(){
+    $(listId).innerHTML = store.list.map((f,i) =>
+      `<span class="chip">${isImg(f.name) ? '🖼️' : '📄'} ${f.name}<button data-i="${i}">✕</button></span>`).join('');
+    $(listId).querySelectorAll('button').forEach(b => b.onclick = () => { store.list.splice(+b.dataset.i,1); render(); onChange(); });
+    onChange();
+  }
+  function add(fl){ for (const f of fl) if (!store.list.some(x => x.name === f.name)) store.list.push(f); render(); }
+  drop.onclick = () => input.click();
+  drop.ondragover = e => { e.preventDefault(); drop.classList.add('drag'); };
+  drop.ondragleave = () => drop.classList.remove('drag');
+  drop.ondrop = e => { e.preventDefault(); drop.classList.remove('drag'); add(e.dataTransfer.files); };
+  input.onchange = () => add(input.files);
+  store.render = render;
+}
+const quizFiles = {list: []}, teachFilesStore = {list: []}, cardFiles = {list: []};
+wireDrop('drop','file-input','filelist', quizFiles, () => { $('generate').disabled = quizFiles.list.length === 0; });
+wireDrop('teach-drop','teach-file-input','teach-filelist', teachFilesStore, () => {});
+wireDrop('cards-drop','cards-file-input','cards-filelist', cardFiles, () => { $('cards-go').disabled = cardFiles.list.length === 0; });
+
+$('numq').onchange = () => {
+  const n = +$('numq').value;
+  $('bigq-hint').textContent = n >= 50 ? `⏳ ${n} questions = multiple AI batches — can take ${n >= 250 ? '3–6' : '1–3'} minutes` : '';
+};
+
+/* ---------------- markdown + math ---------------- */
+function mdToHtml(md){
+  const math = [];
+  md = md.replace(/\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\$[^$\n]+\$|\\\([^)]*?\\\)/g,
+    m => { math.push(m); return `\uE000${math.length-1}\uE001`; });
+  let h = md.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  h = h.replace(/```([\s\S]*?)```/g, (_,c) => `<pre>${c.trim()}</pre>`);
+  h = h.replace(/`([^`]+)`/g, '<code>$1</code>');
+  h = h.replace(/^#{4,6} (.*)$/gm, '<h3>$1</h3>').replace(/^### (.*)$/gm, '<h3>$1</h3>')
+       .replace(/^## (.*)$/gm, '<h2>$1</h2>').replace(/^# (.*)$/gm, '<h1>$1</h1>');
+  h = h.replace(/^\s*(?:---|\*\*\*|___)\s*$/gm, '<hr class="divider">');
+  h = h.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
+  h = h.replace(/^\s*[-•] (.*)$/gm, '<li>$1</li>').replace(/(<li>[\s\S]*?<\/li>)(?!\s*<li>)/g, '<ul>$1</ul>');
+  h = h.replace(/^\s*(\d+)\. (.*)$/gm, '<li>$2</li>');
+  h = h.split(/\n{2,}/).map(b => /^<(h\d|ul|ol|pre|li|hr)/.test(b.trim()) ? b : `<p>${b.replace(/\n/g,'<br>')}</p>`).join('');
+  h = h.replace(/\uE000(\d+)\uE001/g, (_,i) => {
+    const m = math[+i].replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    return /^(\$\$|\\\[)/.test(math[+i]) ? `<div class="math-block">${m}</div>` : m;
+  });
+  return h;
+}
+function renderMath(el){
+  if (window.renderMathInElement){
+    renderMathInElement(el, {delimiters: [
+      {left:'$$', right:'$$', display:true},{left:'\\[', right:'\\]', display:true},
+      {left:'$', right:'$', display:false},{left:'\\(', right:'\\)', display:false}],
+      throwOnError:false});
+  }
+}
+
+/* ---------------- save & resume ---------------- */
+function saveQuizState(){
+  try{
+    localStorage.setItem('qf-active-quiz', JSON.stringify({
+      quiz, idx, score, answers, engineUsed, examMode, timerSecs, quizSource,
+      difficulty: $('difficulty').value, saved: Date.now()
+    }));
+  }catch(e){ /* quota exceeded on giant quizzes — resume just won't be available */ }
+}
+function clearQuizState(){ localStorage.removeItem('qf-active-quiz'); }
+function loadQuizState(){
+  try{ return JSON.parse(localStorage.getItem('qf-active-quiz') || 'null'); }
+  catch(e){ return null; }
+}
+
+/* ---- lesson library: every lesson saved as its own entry (like chat history) ---- */
+let currentLessonId = null;
+function libLoad(key){
+  try{ return JSON.parse(localStorage.getItem(key) || '[]'); }catch(e){ return []; }
+}
+function libSave(key, list){
+  // keep max 30 entries; drop oldest first if storage is full
+  list.sort((a,b) => b.saved - a.saved);
+  list = list.slice(0, 30);
+  while (list.length){
+    try{ localStorage.setItem(key, JSON.stringify(list)); return; }
+    catch(e){ list.pop(); }  // storage full — drop the oldest and retry
+  }
+}
+function saveLessonState(){
+  if (!currentLessonId) currentLessonId = 'l' + Date.now();
+  const lib = libLoad('qf-lessons').filter(x => x.id !== currentLessonId);
+  lib.push({id: currentLessonId, blocks: CTX.teach.blocks, activeBlk: CTX.teach.activeBlk, session: teachSession,
+            level: teachLevel,
+            topic: $('topic').value.trim() || 'Lesson from uploaded material',
+            saved: Date.now()});
+  libSave('qf-lessons', lib);
+}
+function deleteLesson(id){
+  libSave('qf-lessons', libLoad('qf-lessons').filter(x => x.id !== id));
+  renderLessonLibrary();
+}
+function openLesson(id){
+  const l = libLoad('qf-lessons').find(x => x.id === id);
+  if (!l) return;
+  currentLessonId = l.id;
+  teachSession = l.session; teachLevel = l.level || 'std';
+  $('topic').value = l.topic === 'Lesson from uploaded material' ? '' : l.topic;
+  document.querySelectorAll('#teach-panel .level, .levels .level').forEach(x => {
+    if (x.closest('#teach-panel')) x.classList.toggle('active', x.dataset.level === teachLevel);
+  });
+  // new page format, or migrate an old single-html save
+  if (l.blocks && l.blocks.length){
+    CTX.teach.blocks = l.blocks;
+  } else if (l.pages && l.pages.length){
+    // migrate old page-format saves
+    CTX.teach.blocks = [{kind:'lesson', versions: l.pages.map(p => ({level: p.level || 'std', html: p.html || ''})), vIdx: 0}];
+  } else {
+    CTX.teach.blocks = [{kind:'lesson', versions:[{level: teachLevel, html: l.html || ''}], vIdx:0}];
+  }
+  CTX.teach.activeBlk = Math.min(l.activeBlk || CTX.teach.blocks.length - 1, CTX.teach.blocks.length - 1);
+  renderBlocks(CTX.teach, true);
+  show('lesson-panel');
+}
+function renderLessonLibrary(){
+  const lib = libLoad('qf-lessons').sort((a,b) => b.saved - a.saved);
+  $('lesson-library').innerHTML = lib.length === 0 ? '' :
+    `<label style="display:block;margin-bottom:8px;">📚 Your lessons — continue any of them:</label>` +
+    lib.map(l => `<div class="lib-item">
+      <div class="linfo"><strong>🍎 ${l.topic.replace(/</g,'&lt;')}</strong><small>${ago(l.saved)} · ${l.level === 'std' ? '✨' : l.level === 'kid' ? '🧒' : l.level === 'teen' ? '🎒' : '⚡'}</small></div>
+      <button class="btn small" onclick="openLesson('${l.id}')">▶️ Continue</button>
+      <button class="btn ghost small" onclick="deleteLesson('${l.id}')">🗑️</button>
+    </div>`).join('') + `<hr class="divider">`;
+}
+window.openLesson = openLesson; window.deleteLesson = deleteLesson;
+
+function saveCardsState(){
+  try{
+    localStorage.setItem('qf-active-cards', JSON.stringify({deck: cardsDeck, idx: cardIdx, saved: Date.now()}));
+  }catch(e){}
+}
+function clearCardsState(){ localStorage.removeItem('qf-active-cards'); }
+function loadCardsState(){
+  try{ return JSON.parse(localStorage.getItem('qf-active-cards') || 'null'); }
+  catch(e){ return null; }
+}
+
+const ago = ts => {
+  const m = Math.round((Date.now() - ts) / 60000);
+  if (m < 1) return 'just now';
+  if (m < 60) return m + ' min ago';
+  const h = Math.round(m / 60);
+  if (h < 24) return h + ' hour' + (h>1?'s':'') + ' ago';
+  return Math.round(h/24) + ' day(s) ago';
+};
+
+function checkResumables(){
+  const q = loadQuizState();
+  if (q && q.quiz && q.idx < q.quiz.length){
+    $('resume-quiz-info').textContent =
+      `${q.quizSource || 'Quiz'} — question ${q.idx+1} of ${q.quiz.length}, saved ${ago(q.saved)}`;
+    $('resume-quiz-box').classList.remove('hidden');
+  } else $('resume-quiz-box').classList.add('hidden');
+
+  renderLessonLibrary();
+  renderCourseLibrary();
+
+  const c = loadCardsState();
+  if (c && c.deck && c.deck.length){
+    $('resume-cards-info').textContent = `${c.deck.length} cards — card ${c.idx+1}, saved ${ago(c.saved)}`;
+    $('resume-cards-box').classList.remove('hidden');
+  } else $('resume-cards-box').classList.add('hidden');
+
+}
+
+$('resume-quiz-btn').onclick = () => {
+  const s = loadQuizState();
+  if (!s) return;
+  quiz = s.quiz; idx = s.idx; score = s.score; answers = s.answers || [];
+  engineUsed = s.engineUsed; examMode = s.examMode; timerSecs = s.timerSecs;
+  quizSource = s.quizSource || '';
+  show('quiz-panel'); renderQuestion();
+};
+$('discard-quiz-btn').onclick = () => { clearQuizState(); checkResumables(); };
+
+$('resume-cards-btn').onclick = () => {
+  const s = loadCardsState();
+  if (!s) return;
+  cardsDeck = s.deck; cardIdx = Math.min(s.idx, s.deck.length - 1);
+  show('cards-player'); renderCard();
+};
+$('discard-cards-btn').onclick = () => { clearCardsState(); checkResumables(); };
+
+/* ---------------- quiz generation ---------------- */
+$('generate').onclick = async () => {
+  $('error').classList.add('hidden');
+  const n = +$('numq').value;
+  examMode = $('exam-mode').checked;
+  timerSecs = +$('timer-sel').value;
+  show('loading-panel');
+  $('loading-text').innerHTML = n >= 50
+    ? `🧠 Generating <strong>${n}</strong> questions in batches…<br><small>this can take a few minutes — don't close the page</small>`
+    : '🧠 The AI is reading your material and writing questions…';
+  const fd = new FormData();
+  quizFiles.list.forEach(f => fd.append('files', f));
+  fd.append('num_questions', n);
+  fd.append('difficulty', $('difficulty').value);
+  fd.append('include_short', $('short-answers').checked ? '1' : '0');
+  try{
+    const res = await fetch('/upload', {method:'POST', body:fd});
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+    quiz = data.quiz; engineUsed = data.engine || 'basic';
+    quizSource = data.source || quizFiles.list.map(f=>f.name).join(', ');
+    startQuiz();
+    saveQuizState();
+  }catch(err){
+    show('upload-panel');
+    $('error').textContent = '⚠️ ' + (err.message === 'Failed to fetch'
+      ? 'Network problem — check your connection and try again.' : err.message);
+    $('error').classList.remove('hidden');
+  }
+};
+
+function startQuiz(){
+  idx = 0; score = 0; answers = [];
+  show('quiz-panel'); renderQuestion();
+}
+
+/* ---------------- timer ---------------- */
+function clearTimer(){ if (timerHandle){ clearInterval(timerHandle); timerHandle = null; } $('q-timer').classList.add('hidden'); }
+function startTimer(){
+  clearTimer();
+  if (!timerSecs) return;
+  timeLeft = timerSecs;
+  const t = $('q-timer');
+  t.classList.remove('hidden','low');
+  t.textContent = `⏱️ ${timeLeft}s`;
+  timerHandle = setInterval(() => {
+    timeLeft--;
+    t.textContent = `⏱️ ${timeLeft}s`;
+    if (timeLeft <= 5) t.classList.add('low');
+    if (timeLeft <= 0){ clearTimer(); onTimeout(); }
+  }, 1000);
+}
+function onTimeout(){
+  const q = quiz[idx];
+  if (q.type === 'short'){
+    recordShort('', {verdict:'wrong', feedback:'⏱️ Time up! ' + (q.explanation || 'Model answer: ' + q.answer)});
+  } else {
+    recordMcq(-1);
+  }
+}
+
+/* ---------------- question rendering ---------------- */
+function renderQuestion(){
+  const q = quiz[idx];
+  const done = answers[idx];   // already answered? -> review state
+  $('q-count').innerHTML = `Question ${idx+1} of ${quiz.length} &nbsp;<span style="background:${engineUsed==='ai'?'rgba(0,212,166,.15)':'var(--card2)'};border-radius:99px;padding:2px 10px;font-size:.75rem;">${engineUsed==='ai'?'🧠 AI':'⚙️ basic'}${examMode?' · 🎓 exam':''}</span>${done ? ' <span style="background:rgba(124,92,255,.18);border-radius:99px;padding:2px 10px;font-size:.75rem;">👁️ answered</span>' : ''}`;
+  $('q-score').textContent = examMode ? '' : `Score: ${fmtScore(score)}`;
+  $('bar-fill').style.width = (idx / quiz.length * 100) + '%';
+  $('q-text').textContent = q.question;
+  renderMath($('q-text'));
+  $('feedback').classList.add('hidden');
+  $('next').classList.add('hidden');
+  $('q-opts').innerHTML = '';
+  $('short-box').classList.add('hidden');
+  $('prev').classList.toggle('hidden', idx === 0);
+
+  if (done){ renderAnswered(q, done); return; }
+
+  if (q.type === 'short'){
+    $('short-box').classList.remove('hidden');
+    $('short-input').value = '';
+    $('short-input').disabled = false;
+    $('short-submit').disabled = false;
+    setTimeout(() => $('short-input').focus(), 50);
+  } else {
+    q.options.forEach((opt,i) => {
+      const b = document.createElement('button');
+      b.className = 'opt';
+      b.innerHTML = `<span class="letter">${String.fromCharCode(65+i)}</span><span>${opt.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</span>`;
+      b.onclick = () => recordMcq(i, b);
+      $('q-opts').appendChild(b);
+    });
+    renderMath($('q-opts'));
+  }
+  startTimer();
+}
+
+function fmtScore(s){ return Number.isInteger(s) ? s : s.toFixed(1); }
+
+/* ---------------- review of an already-answered question ---------------- */
+function renderAnswered(q, a){
+  clearTimer();
+  if (q.type === 'short'){
+    $('short-box').classList.remove('hidden');
+    $('short-input').value = a.picked === '(no answer)' ? '' : a.picked;
+    $('short-input').disabled = true;
+    $('short-submit').disabled = true;
+  } else {
+    q.options.forEach((opt,i) => {
+      const b = document.createElement('button');
+      b.className = 'opt';
+      b.disabled = true;
+      b.innerHTML = `<span class="letter">${String.fromCharCode(65+i)}</span><span>${opt.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</span>`;
+      if (!examMode && i === q.answer) b.classList.add('correct');
+      if (i === a.pickedIdx && a.verdict !== 'correct') b.classList.add(examMode ? 'picked' : 'wrong');
+      if (examMode && i === a.pickedIdx) b.classList.add('picked');
+      $('q-opts').appendChild(b);
+    });
+    renderMath($('q-opts'));
+  }
+  if (!examMode){
+    const fb = $('feedback');
+    fb.className = 'feedback ' + (a.verdict === 'correct' ? 'good' : a.verdict === 'partial' ? 'mid' : 'bad');
+    fb.innerHTML = (a.verdict === 'correct' ? '✅ <strong>Correct!</strong> ' :
+                    a.verdict === 'partial' ? '🟡 <strong>Partly right!</strong> ' :
+                    '❌ <strong>Not quite.</strong> ') +
+      (a.verdict !== 'correct' ? `The answer is “${a.right}”. ` : '') + (a.explanation || '');
+    renderMath(fb);
+    fb.classList.remove('hidden');
+  }
+  showNext();
+}
+
+/* ---------------- answering: MCQ ---------------- */
+function recordMcq(i, btn){
+  clearTimer();
+  const q = quiz[idx];
+  const buttons = [...$('q-opts').children];
+  buttons.forEach(b => b.disabled = true);
+  const correct = i === q.answer;
+  if (correct) score++;
+  answers[idx] = {q: q.question, type:'mcq', picked: i >= 0 ? q.options[i] : '(no answer)',
+                pickedIdx: i, right: q.options[q.answer], verdict: correct ? 'correct' : 'wrong',
+                explanation: q.explanation || ''};
+  saveQuizState();
+  if (examMode){
+    if (btn) btn.classList.add('picked');
+    setTimeout(nextQuestion, 250);
+    return;
+  }
+  buttons[q.answer]?.classList.add('correct');
+  if (!correct && btn) btn.classList.add('wrong');
+  const fb = $('feedback');
+  fb.className = 'feedback ' + (correct ? 'good' : 'bad');
+  fb.innerHTML = (i < 0 ? '⏱️ <strong>Time up!</strong> ' : correct ? '✅ <strong>Correct!</strong> ' : `❌ <strong>Not quite.</strong> `) +
+    (!correct ? `The answer is “${q.options[q.answer]}”. ` : '') + (q.explanation || '');
+  renderMath(fb);
+  fb.classList.remove('hidden');
+  $('q-score').textContent = `Score: ${fmtScore(score)}`;
+  showNext();
+}
+
+/* ---------------- answering: short ---------------- */
+$('short-submit').onclick = submitShort;
+$('short-input').addEventListener('keydown', e => { if (e.key === 'Enter') submitShort(); });
+async function submitShort(){
+  const q = quiz[idx];
+  const val = $('short-input').value.trim();
+  if (!val) return;
+  clearTimer();
+  $('short-input').disabled = true;
+  $('short-submit').disabled = true;
+  $('short-submit').textContent = '…';
+  let result;
+  try{
+    const res = await fetch('/grade', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({question:q.question, model_answer:q.answer, student_answer:val})});
+    result = await res.json();
+    if (!res.ok) throw new Error(result.error);
+  }catch(e){
+    result = {verdict:'wrong', feedback:'Grading unavailable — model answer: ' + q.answer};
+  }
+  $('short-submit').textContent = 'Submit';
+  recordShort(val, result);
+}
+function recordShort(val, result){
+  const q = quiz[idx];
+  if (result.verdict === 'correct') score += 1;
+  else if (result.verdict === 'partial') score += 0.5;
+  answers[idx] = {q: q.question, type:'short', picked: val || '(no answer)', pickedIdx: -1,
+                right: q.answer, verdict: result.verdict,
+                explanation: result.feedback || q.explanation || ''};
+  saveQuizState();
+  if (examMode){ nextQuestion(); return; }
+  const fb = $('feedback');
+  fb.className = 'feedback ' + (result.verdict === 'correct' ? 'good' : result.verdict === 'partial' ? 'mid' : 'bad');
+  fb.innerHTML = (result.verdict === 'correct' ? '✅ <strong>Correct!</strong> ' :
+                  result.verdict === 'partial' ? '🟡 <strong>Partly right!</strong> ' :
+                  '❌ <strong>Not quite.</strong> ') + (result.feedback || '') +
+                 ` <br><small>Model answer: ${q.answer}</small>`;
+  renderMath(fb);
+  fb.classList.remove('hidden');
+  $('q-score').textContent = `Score: ${fmtScore(score)}`;
+  showNext();
+}
+
+function showNext(){
+  $('next').textContent = idx === quiz.length - 1 ? 'See results 🏁' : 'Next →';
+  $('next').classList.remove('hidden');
+}
+$('next').onclick = nextQuestion;
+function nextQuestion(){
+  idx++;
+  if (idx < quiz.length){ renderQuestion(); saveQuizState(); } else showResults();
+}
+$('prev').onclick = () => { if (idx > 0){ idx--; renderQuestion(); } };
+
+/* ---------------- results & history ---------------- */
+function showResults(){
+  clearTimer();
+  clearQuizState();  // finished — nothing to resume
+  show('result-panel');
+  const pct = Math.round(score / quiz.length * 100);
+  $('circle').style.setProperty('--pct', pct);
+  $('pct-label').textContent = pct + '%';
+  $('score-label').textContent = `${fmtScore(score)} / ${quiz.length}`;
+  $('verdict').textContent = pct >= 80 ? '🏆 Excellent — you know this material!'
+                     : pct >= 60 ? '👍 Good job — nearly there!'
+                     : pct >= 40 ? '📖 Getting there — one more review will help.'
+                     : '💪 Keep studying — try again after a re-read.';
+  $('sub').textContent = examMode ? 'Exam mode — full review below.' : 'Review your answers below.';
+  const icon = v => v === 'correct' ? '✅' : v === 'partial' ? '🟡' : '❌';
+  $('review').innerHTML = answers.map(a =>
+    `<div class="rev"><div class="q">${icon(a.verdict)} ${a.q}</div>
+     <div class="${a.verdict==='correct'?'a':'x'}">You: ${a.picked}</div>
+     ${a.verdict !== 'correct' ? `<div class="a">Answer: ${a.right}</div>` : ''}
+     ${a.explanation ? `<div><small>${a.explanation}</small></div>` : ''}</div>`).join('');
+  renderMath($('review'));
+  saveHistory(pct);
+}
+
+function saveHistory(pct){
+  const hist = JSON.parse(localStorage.getItem('qf-history') || '[]');
+  hist.unshift({date: new Date().toISOString(), source: quizSource.slice(0,60),
+                score: fmtScore(score), total: quiz.length, pct,
+                difficulty: $('difficulty').value, exam: examMode});
+  localStorage.setItem('qf-history', JSON.stringify(hist.slice(0,100)));
+}
+function renderHistory(){
+  const hist = JSON.parse(localStorage.getItem('qf-history') || '[]');
+  $('hist-list').innerHTML = hist.length === 0
+    ? '<p style="color:var(--muted)">No quizzes taken yet. Your scores will appear here. 📈</p>'
+    : hist.map(h => {
+        const d = new Date(h.date);
+        const cls = h.pct >= 70 ? 'good' : h.pct >= 40 ? 'mid' : 'bad';
+        return `<div class="hist-item">
+          <div><strong>${h.source || 'Quiz'}</strong>
+          <small>${d.toLocaleDateString()} ${d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})} · ${h.total} questions · ${h.difficulty}${h.exam ? ' · 🎓 exam' : ''}</small></div>
+          <div class="pct ${cls}">${h.pct}%<small style="text-align:right">${h.score}/${h.total}</small></div>
+        </div>`; }).join('');
+}
+$('hist-clear').onclick = () => { localStorage.removeItem('qf-history'); renderHistory(); };
+
+$('retry').onclick = startQuiz;
+$('newfiles').onclick = () => { quizFiles.list = []; quizFiles.render(); show('upload-panel'); };
+
+/* ---------------- export printable quiz ---------------- */
+$('export-quiz').onclick = () => {
+  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+  let html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>QuizForge — printable quiz</title>
+  <style>body{font-family:Georgia,serif;max-width:800px;margin:40px auto;padding:0 20px;line-height:1.6;color:#111}
+  h1{border-bottom:3px solid #333;padding-bottom:8px} .q{margin:18px 0 6px;font-weight:bold}
+  ol.opts{list-style:upper-alpha;margin-left:28px} .key{page-break-before:always}
+  .blank{border-bottom:1px solid #999;display:inline-block;min-width:280px}</style></head><body>
+  <h1>⚡ QuizForge — ${esc(quizSource || 'Quiz')}</h1>
+  <p>${quiz.length} questions · ${esc($('difficulty').value)} difficulty · generated ${new Date().toLocaleDateString()}</p>
+  <p style="font-style:italic; color:#555;">QuizForge — built by Festus Mensah</p>`;
+  quiz.forEach((q,i) => {
+    html += `<div class="q">${i+1}. ${esc(q.question)}</div>`;
+    if (q.type === 'short') html += `<p>Answer: <span class="blank">&nbsp;</span></p>`;
+    else html += `<ol class="opts">${q.options.map(o => `<li>${esc(o)}</li>`).join('')}</ol>`;
+  });
+  html += `<div class="key"><h1>Answer key</h1><ol>`;
+  quiz.forEach(q => {
+    html += `<li>${q.type === 'short' ? esc(q.answer) : String.fromCharCode(65+q.answer) + ' — ' + esc(q.options[q.answer])}${q.explanation ? ' <em>(' + esc(q.explanation) + ')</em>' : ''}</li>`;
+  });
+  html += `</ol></div></body></html>`;
+  const blob = new Blob([html], {type:'text/html'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'quizforge_printable.html';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  alert('📥 Downloaded! Open the file and use your browser\'s Print → "Save as PDF" for a PDF copy.');
+};
+
+/* ---------------- teach mode ---------------- */
+let teachLevel = 'std', teachSession = null;
+document.querySelectorAll('.level').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.level').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  teachLevel = b.dataset.level;
+});
+
+$('teach-go').onclick = async () => {
+  const topic = $('topic').value.trim();
+  if (!topic && teachFilesStore.list.length === 0){
+    $('teach-error').textContent = '⚠️ Type a topic or add some material first.';
+    $('teach-error').classList.remove('hidden');
+    return;
+  }
+  $('teach-error').classList.add('hidden');
+  show('loading-panel');
+  $('loading-text').innerHTML = '🍎 Your tutor is preparing the lesson…<br><small>(reading any uploaded material, including images)</small>';
+  const fd = new FormData();
+  fd.append('topic', topic);
+  fd.append('level', teachLevel);
+  teachFilesStore.list.forEach(f => fd.append('files', f));
+  try{
+    const res = await fetch('/teach', {method:'POST', body:fd});
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+    teachSession = data.session;
+    currentLessonId = null;  // new lesson -> new library entry
+    CTX.teach.blocks = [{kind:'lesson', versions:[{level: teachLevel, html: mdToHtml(data.reply)}], vIdx:0}];
+    CTX.teach.activeBlk = 0;
+    renderBlocks(CTX.teach);
+    $('lesson').scrollTop = 0;
+    show('lesson-panel');
+    saveLessonState();
+  }catch(err){
+    show('teach-panel');
+    $('teach-error').textContent = '⚠️ ' + err.message;
+    $('teach-error').classList.remove('hidden');
+  }
+};
+
+/* ==== GENERIC BLOCK ENGINE — used by Teach Me AND Course sessions ====
+   Vertical chat of blocks; each block flips horizontally between at most 4
+   level versions: ✨ Standard · 🧒 Like I'm 7 · 🎒 High school · ⚡ Quick facts.
+   Drag a block right (or tap ↩️) to reply to it, WhatsApp-style. */
+const LEVEL_NAMES = {std:'✨ Standard', kid:"🧒 Like I'm 7", teen:'🎒 High school', facts:'⚡ Quick facts'};
+const LEVEL_ASK = {std:'in your normal clear style ✨', kid:"like I'm 7 🧒", teen:'at high-school level 🎒', facts:'as a rapid fact sheet: key facts, formulas with symbols explained, and classic traps — no prose ⚡'};
+const MAX_VERSIONS = 4;   // hard cap: one page per level
+const CTX = {};
+const escH = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+
+function regCtx(name, opts){
+  CTX[name] = Object.assign({name, blocks:[], activeBlk:0, replyTo:null, files:[]}, opts);
+  return CTX[name];
+}
+
+function copyText(t, btn){
+  const fallback = () => {
+    const ta = document.createElement('textarea');
+    ta.value = t; document.body.appendChild(ta); ta.select();
+    try{ document.execCommand('copy'); }catch(e){}
+    ta.remove();
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText)
+    navigator.clipboard.writeText(t).catch(fallback);
+  else fallback();
+  if (btn){ const o = btn.textContent; btn.textContent = '✅ Copied'; setTimeout(() => btn.textContent = o, 1200); }
+}
+
+function blkHtml(ctx, i){
+  const b = ctx.blocks[i], v = b.versions[b.vIdx];
+  const nav = b.versions.length > 1
+    ? `<div class="blk-nav">
+         <button onclick="flipBlk('${ctx.name}',${i},-1)" ${b.vIdx===0?'disabled':''}>‹</button>
+         <span>${b.vIdx+1}/${b.versions.length}</span>
+         <button onclick="flipBlk('${ctx.name}',${i},1)" ${b.vIdx===b.versions.length-1?'disabled':''}>›</button>
+       </div>` : '';
+  const qPart = b.kind === 'q'
+    ? `<div class="bubble-q">🙋 ${escH(b.question)}</div>
+       <div class="blk-actions">
+         <button onclick="blkAct('${ctx.name}',${i},'copyq',this)">📋 Copy</button>
+         <button onclick="blkAct('${ctx.name}',${i},'editq',this)">✏️ Edit</button>
+         <button onclick="blkAct('${ctx.name}',${i},'reply',this)">↩️ Reply</button>
+       </div>` : '';
+  const aActions = `<div class="blk-actions">
+       <button onclick="blkAct('${ctx.name}',${i},'copya',this)">📋 Copy${b.kind==='q'?' answer':''}</button>
+       ${b.kind!=='q' ? `<button onclick="blkAct('${ctx.name}',${i},'reply',this)">↩️ Reply</button>` : ''}
+     </div>`;
+  return `<div class="blk" id="${ctx.name}-blk-${i}" data-i="${i}">
+    <div class="blk-head"><span class="page-tag">${b.kind==='q'?'🙋':'📖'} ${LEVEL_NAMES[v.level]}</span>${nav}</div>
+    ${qPart}<div class="blk-body" id="${ctx.name}-blk-body-${i}">${v.html}</div>${aActions}
+  </div>`;
+}
+
+function renderBlocks(ctx, scrollToEnd){
+  $(ctx.el).innerHTML = ctx.blocks.map((_,i) => blkHtml(ctx, i)).join('');
+  renderMath($(ctx.el));
+  markLevel(ctx);
+  wireDrag(ctx);
+  if (scrollToEnd) $(ctx.el).scrollTop = $(ctx.el).scrollHeight;
+}
+
+function rerenderBlk(ctx, i, dir){
+  const el = document.getElementById(`${ctx.name}-blk-${i}`);
+  if (!el){ renderBlocks(ctx); return; }
+  el.outerHTML = blkHtml(ctx, i);
+  const body = document.getElementById(`${ctx.name}-blk-body-${i}`);
+  if (dir && body) body.classList.add(dir === 'left' ? 'flip-left' : 'flip-right');
+  renderMath(document.getElementById(`${ctx.name}-blk-${i}`));
+  markLevel(ctx);
+  wireDrag(ctx);
+}
+
+function addBlock(ctx, block){
+  ctx.blocks.push(block);
+  ctx.activeBlk = ctx.blocks.length - 1;
+  renderBlocks(ctx, true);
+  ctx.save();
+}
+
+function markLevel(ctx){
+  const b = ctx.blocks[ctx.activeBlk];
+  const lvl = b ? b.versions[b.vIdx].level : 'std';
+  document.querySelectorAll(ctx.levelsSel).forEach(x =>
+    x.classList.toggle('active', x.dataset.level === lvl));
+}
+
+window.flipBlk = (ctxName, i, step) => {
+  const ctx = CTX[ctxName], b = ctx.blocks[i];
+  const nv = b.vIdx + step;
+  if (nv < 0 || nv >= b.versions.length) return;
+  b.vIdx = nv;
+  ctx.activeBlk = i;
+  rerenderBlk(ctx, i, step > 0 ? 'right' : 'left');
+  ctx.save();
+};
+
+window.blkAct = (ctxName, i, act, btn) => {
+  const ctx = CTX[ctxName], b = ctx.blocks[i];
+  if (act === 'copyq') copyText(b.question || '', btn);
+  else if (act === 'copya'){
+    const body = document.getElementById(`${ctx.name}-blk-body-${i}`);
+    copyText(body ? body.innerText : '', btn);
+  }
+  else if (act === 'editq'){
+    const inp = $(ctx.input);
+    inp.value = b.question || '';
+    inp.focus();
+    inp.setSelectionRange(inp.value.length, inp.value.length);
+  }
+  else if (act === 'reply') setReply(ctxName, i);
+};
+
+/* ---- WhatsApp-style reply: drag a block right, or tap ↩️ ---- */
+function setReply(ctxName, i){
+  const ctx = CTX[ctxName], b = ctx.blocks[i];
+  const body = document.getElementById(`${ctx.name}-blk-body-${i}`);
+  const excerpt = (b.kind === 'q' ? b.question : (body ? body.innerText : '')).slice(0, 110);
+  ctx.replyTo = {i, excerpt};
+  renderReplyBar(ctx);
+  $(ctx.input).focus();
+}
+function clearReply(ctxName){
+  CTX[ctxName].replyTo = null;
+  renderReplyBar(CTX[ctxName]);
+}
+function renderReplyBar(ctx){
+  const bar = $(ctx.replyBar);
+  bar.innerHTML = ctx.replyTo
+    ? `<div class="reply-chip">↩️ Replying to: <em>${escH(ctx.replyTo.excerpt)}…</em>
+       <button onclick="clearReply('${ctx.name}')">✕</button></div>` : '';
+}
+window.clearReply = clearReply;
+
+function wireDrag(ctx){
+  $(ctx.el).querySelectorAll('.blk').forEach(el => {
+    let sx = 0, sy = 0, dx = 0, active = false;
+    el.onpointerdown = e => {
+      if (e.target.closest('button, input, a')) return;
+      sx = e.clientX; sy = e.clientY; dx = 0; active = true;
+    };
+    el.onpointermove = e => {
+      if (!active) return;
+      dx = e.clientX - sx;
+      const dy = e.clientY - sy;
+      if (Math.abs(dy) > Math.abs(dx) + 8){ active = false; el.style.transform = ''; return; }
+      if (dx > 6){
+        el.setPointerCapture(e.pointerId);
+        el.style.transition = 'none';
+        el.style.transform = `translateX(${Math.min(dx, 90)}px)`;
+      }
+    };
+    const finish = () => {
+      if (!active) return;
+      active = false;
+      el.style.transition = 'transform .2s';
+      el.style.transform = '';
+      if (dx > 60) setReply(ctx.name, +el.dataset.i);
+      dx = 0;
+    };
+    el.onpointerup = finish;
+    el.onpointercancel = finish;
+  });
+}
+
+/* ---- "Explain as" — acts on the active block; max 4 versions (one per level) ---- */
+function wireLevels(ctxName){
+  document.querySelectorAll(CTX[ctxName].levelsSel).forEach(bt => bt.onclick = async () => {
+    const ctx = CTX[ctxName], lvl = bt.dataset.level;
+    const blk = ctx.blocks[ctx.activeBlk];
+    if (!blk) return;
+    if (blk.versions[blk.vIdx].level === lvl) return;
+    const existing = blk.versions.findIndex(v => v.level === lvl);
+    if (existing >= 0){
+      const dir = existing > blk.vIdx ? 'right' : 'left';
+      blk.vIdx = existing;
+      rerenderBlk(ctx, ctx.activeBlk, dir);
+      ctx.save();
+      return;
+    }
+    if (blk.versions.length >= MAX_VERSIONS) return;  // hard cap: 4 pages per block
+    const ask = blk.kind === 'q'
+      ? `Please answer this question again, but ${LEVEL_ASK[lvl]}: "${blk.question}"`
+      : `Please re-explain the lesson you taught me, but ${LEVEL_ASK[lvl]}. From now on continue ${LEVEL_ASK[lvl]}.`;
+    const reply = await ctx.ask(ask, lvl, []);
+    if (reply === null) return;
+    blk.versions.push({level: lvl, html: mdToHtml(reply)});
+    blk.vIdx = blk.versions.length - 1;
+    rerenderBlk(ctx, ctx.activeBlk, 'right');
+    ctx.save();
+  });
+}
+
+/* ---- unified sender: question box + attachments + reply context ---- */
+async function sendQuestion(ctxName){
+  const ctx = CTX[ctxName];
+  const q = $(ctx.input).value.trim();
+  const atts = [...ctx.files];
+  if (!q && !atts.length) return;
+  $(ctx.input).value = '';
+  ctx.files = []; renderCtxFiles(ctx);
+  const reply2 = ctx.replyTo; ctx.replyTo = null; renderReplyBar(ctx);
+
+  let aiQ = q || 'Please look at what I just attached and explain it as part of our lesson.';
+  let label = q || 'Explain what I attached';
+  if (reply2){
+    const rb = ctx.blocks[reply2.i];
+    const body = document.getElementById(`${ctx.name}-blk-body-${reply2.i}`);
+    const quoted = (rb && rb.kind === 'q')
+      ? `my earlier question "${rb.question}" and your answer to it`
+      : 'this part of the lesson';
+    aiQ = `I'm replying to ${quoted}:\n"""${(body ? body.innerText : reply2.excerpt).slice(0, 800)}"""\n\n${aiQ}`;
+    label = `↩️ ${reply2.excerpt.slice(0, 45)}… — ${label}`;
+  }
+  const chips = atts.length ? `<div style="margin:6px 0 0; font-size:.85rem; color:var(--muted);">${atts.map(f => '📎 ' + escH(f.name)).join(' · ')}</div>` : '';
+  $(ctx.el).innerHTML += `<div class="blk" id="${ctx.name}-thinking"><div class="bubble-q">🙋 ${escH(label)}${chips}</div><p><em>${atts.length ? '👀 reading your attachment…' : '✏️ thinking…'}</em></p></div>`;
+  $(ctx.el).scrollTop = $(ctx.el).scrollHeight;
+  const reply = await ctx.ask(aiQ, 'std', atts);
+  document.getElementById(`${ctx.name}-thinking`)?.remove();
+  if (reply === null){ ctx.files = atts; renderCtxFiles(ctx); return; }
+  addBlock(ctx, {kind:'q', question: label + (atts.length ? ` (📎 ${atts.map(f=>f.name).join(', ')})` : ''),
+                 versions:[{level:'std', html: mdToHtml(reply)}], vIdx:0});
+}
+
+/* ---- attachments (📎 files & 📷 camera) per context ---- */
+async function shrinkImage(file){
+  if (!/^image\//.test(file.type) || file.size < 1.5 * 1024 * 1024) return file;
+  try{
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(1, 2000 / Math.max(bmp.width, bmp.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(bmp.width * scale);
+    canvas.height = Math.round(bmp.height * scale);
+    canvas.getContext('2d').drawImage(bmp, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.85));
+    return new File([blob], file.name.replace(/\.\w+$/, '.jpg'), {type:'image/jpeg'});
+  }catch(e){ return file; }
+}
+function renderCtxFiles(ctx){
+  const isImg = n => /\.(png|jpe?g|webp|bmp|tiff?)$/i.test(n);
+  $(ctx.filesEl).innerHTML = ctx.files.map((f,i) =>
+    `<span class="chip">${isImg(f.name) ? '🖼️' : '📄'} ${escH(f.name)}<button onclick="rmCtxFile('${ctx.name}',${i})">✕</button></span>`).join('');
+}
+window.rmCtxFile = (ctxName, i) => { CTX[ctxName].files.splice(i,1); renderCtxFiles(CTX[ctxName]); };
+function wireAttach(ctxName, attachBtn, cameraBtn, fileInput, cameraInput){
+  const ctx = CTX[ctxName];
+  const addAll = async list => {
+    for (const f of list){
+      const name = f.name && f.name !== 'image.jpg' ? f.name : `photo_${Date.now()}.jpg`;
+      ctx.files.push(await shrinkImage(new File([f], name, {type: f.type})));
+    }
+    renderCtxFiles(ctx);
+  };
+  $(attachBtn).onclick = () => $(fileInput).click();
+  $(cameraBtn).onclick = () => $(cameraInput).click();
+  $(fileInput).onchange = () => { addAll($(fileInput).files); $(fileInput).value = ''; };
+  $(cameraInput).onchange = () => { addAll($(cameraInput).files); $(cameraInput).value = ''; };
+}
+
+/* ---- TEACH context ---- */
+regCtx('teach', {
+  el:'lesson', levelsSel:'#lesson-levels .level', input:'followup-q',
+  replyBar:'reply-bar', filesEl:'followup-files',
+  save: () => saveLessonState(),
+  ask: (q, lvl, files) => fetchFollowup(q, lvl, files),
+});
+wireLevels('teach');
+wireAttach('teach', 'attach-btn', 'camera-btn', 'followup-file-input', 'camera-input');
+
+/* low-level: ask the teach tutor, return reply text (null on failure) */
+async function fetchFollowup(question, levelOverride, files){
+  $('lesson-error').classList.add('hidden');
+  $('followup-send').disabled = true;
+  $('followup-send').textContent = '…';
+  try{
+    let opts;
+    if (files && files.length){
+      const fd = new FormData();
+      fd.append('session', teachSession);
+      fd.append('question', question || '');
+      fd.append('level', levelOverride || 'std');
+      files.forEach(f => fd.append('files', f));
+      opts = {method:'POST', body: fd};
+    } else {
+      opts = {method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({session: teachSession, question, level: levelOverride || 'std'})};
+    }
+    const res = await fetch('/teach/followup', opts);
+    const data = await res.json();
+    if (res.status === 400 && (data.error || '').includes('expired')){
+      throw new Error('This chat session expired during your break — the lesson is saved, but for new questions start a fresh lesson on the same topic.');
+    }
+    if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+    return data.reply;
+  }catch(err){
+    $('lesson-error').textContent = '⚠️ ' + err.message;
+    $('lesson-error').classList.remove('hidden');
+    return null;
+  }finally{
+    $('followup-send').disabled = false;
+    $('followup-send').textContent = 'Ask';
+  }
+}
+
+function sendFollowup(){ return sendQuestion('teach'); }
+$('followup-send').onclick = sendFollowup;
+$('followup-q').addEventListener('keydown', e => { if (e.key === 'Enter') sendFollowup(); });
+$('lesson-new').onclick = () => { teachSession = null; currentLessonId = null; renderLessonLibrary(); show('teach-panel'); };
+$('lesson-quiz').onclick = () => {
+  if (teachFilesStore.list.length){
+    quizFiles.list = [...teachFilesStore.list];
+    quizFiles.render();
+    switchMode('quiz');
+    $('generate').click();
+  } else {
+    const topic = $('topic').value.trim();
+    if (!topic){ switchMode('quiz'); return; }
+    const lessonText = $('lesson').innerText.slice(0, 20000);
+    const blob = new Blob([`Topic: ${topic}\n\n${lessonText}`], {type:'text/plain'});
+    quizFiles.list = [new File([blob], 'lesson.txt')];
+    quizFiles.render();
+    switchMode('quiz');
+    $('generate').click();
+  }
+};
+
+
+/* ---------------- flashcards ---------------- */
+let cardsDeck = [], cardIdx = 0;
+$('cards-go').onclick = async () => {
+  $('cards-error').classList.add('hidden');
+  show('loading-panel');
+  $('loading-text').textContent = '🗂️ Building your flashcards…';
+  const fd = new FormData();
+  cardFiles.list.forEach(f => fd.append('files', f));
+  fd.append('count', $('cards-count').value);
+  try{
+    const res = await fetch('/flashcards', {method:'POST', body:fd});
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+    cardsDeck = data.cards; cardIdx = 0;
+    show('cards-player'); renderCard();
+    saveCardsState();
+  }catch(err){
+    show('cards-panel');
+    $('cards-error').textContent = '⚠️ ' + err.message;
+    $('cards-error').classList.remove('hidden');
+  }
+};
+function renderCard(){
+  const c = cardsDeck[cardIdx];
+  $('fcard').classList.remove('flipped');
+  setTimeout(() => {
+    $('fc-front').textContent = c.front;
+    $('fc-back').textContent = c.back;
+    renderMath($('fc-front')); renderMath($('fc-back'));
+  }, 150);
+  $('fc-count').textContent = `Card ${cardIdx+1} of ${cardsDeck.length}`;
+  $('fc-progress').textContent = '💡 Front: question · Back: answer';
+}
+$('fcard').onclick = () => $('fcard').classList.toggle('flipped');
+$('fc-next').onclick = () => { cardIdx = (cardIdx + 1) % cardsDeck.length; renderCard(); saveCardsState(); };
+$('fc-prev').onclick = () => { cardIdx = (cardIdx - 1 + cardsDeck.length) % cardsDeck.length; renderCard(); saveCardsState(); };
+$('fc-shuffle').onclick = () => { cardsDeck.sort(() => Math.random() - .5); cardIdx = 0; renderCard(); saveCardsState(); };
+$('fc-new').onclick = () => { cardsDeck = []; cardFiles.list = []; cardFiles.render(); clearCardsState(); checkResumables(); show('cards-panel'); };
+
+/* ---------------- course mode ---------------- */
+let course = null;          // {id,title,sessions,progress,level,topic}
+let courseLevel = 'std';
+let cs = null;              // current session: {num, lesson, questions, cpIdx, cpCorrect, attempted}
+const courseFiles = {list: []};
+let courseFilesWired = false;
+
+document.querySelectorAll('#course-levels .level').forEach(b => b.onclick = () => {
+  document.querySelectorAll('#course-levels .level').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  courseLevel = b.dataset.level;
+});
+wireDrop('course-drop','course-file-input','course-filelist', courseFiles, () => {});
+
+function saveCourseState(){
+  if (!course) return;
+  if (!course.cid) course.cid = 'c' + Date.now();
+  const lib = libLoad('qf-courses').filter(x => x.cid !== course.cid);
+  lib.push({...course, saved: Date.now()});
+  libSave('qf-courses', lib);
+}
+function deleteCourse(cid){
+  libSave('qf-courses', libLoad('qf-courses').filter(x => x.cid !== cid));
+  if (course && course.cid === cid){ course = null; cs = null; }
+  renderCourseLibrary();
+}
+function openCourse(cid){
+  const saved = libLoad('qf-courses').find(x => x.cid === cid);
+  if (saved) rebuildCourse(saved);
+}
+function renderCourseLibrary(){
+  const lib = libLoad('qf-courses').sort((a,b) => b.saved - a.saved);
+  $('course-library').innerHTML = lib.length === 0 ? '' :
+    `<label style="display:block;margin-bottom:8px;">🎓 Your courses — continue any of them:</label>` +
+    lib.map(c => {
+      const d = (c.done || []).filter(Boolean).length;
+      const total = (c.sessions || []).length;
+      const doneBadge = d >= total ? '🏆 complete' : `${d}/${total} sessions`;
+      return `<div class="lib-item">
+        <div class="linfo"><strong>🎓 ${(c.title || 'Course').replace(/</g,'&lt;')}</strong><small>${doneBadge} · ${ago(c.saved)}</small></div>
+        <button class="btn small" onclick="openCourse('${c.cid}')">▶️ Continue</button>
+        <button class="btn ghost small" onclick="deleteCourse('${c.cid}')">🗑️</button>
+      </div>`;
+    }).join('') + `<hr class="divider">`;
+}
+window.openCourse = openCourse; window.deleteCourse = deleteCourse;
+
+$('course-go').onclick = async () => {
+  const topic = $('course-topic').value.trim();
+  if (!topic && courseFiles.list.length === 0){
+    $('course-error').textContent = '⚠️ Type a topic or upload material first.';
+    $('course-error').classList.remove('hidden');
+    return;
+  }
+  $('course-error').classList.add('hidden');
+  show('loading-panel');
+  $('loading-text').innerHTML = '🎓 Designing your course syllabus…';
+  const fd = new FormData();
+  fd.append('topic', topic);
+  fd.append('level', courseLevel);
+  courseFiles.list.forEach(f => fd.append('files', f));
+  try{
+    const res = await fetch('/course/start', {method:'POST', body:fd});
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+    course = {id: data.course, title: data.title, sessions: data.sessions,
+              progress: 0, level: courseLevel, topic};
+    saveCourseState();
+    renderSyllabus();
+    show('course-syllabus');
+  }catch(err){
+    show('course-setup');
+    $('course-error').textContent = '⚠️ ' + err.message;
+    $('course-error').classList.remove('hidden');
+  }
+};
+
+function courseDone(){
+  // per-session completion; migrate old saves that only had a progress number
+  if (!course.done) course.done = course.sessions.map((_,i) => i < (course.progress || 0));
+  return course.done;
+}
+function doneCount(){ return courseDone().filter(Boolean).length; }
+
+function renderSyllabus(){
+  const done = courseDone();
+  const next = done.findIndex(d => !d);   // first not-completed = suggested next
+  $('course-title').textContent = '🎓 ' + course.title;
+  $('course-progress').textContent = `${doneCount()} of ${course.sessions.length} sessions completed`;
+  $('syllabus').innerHTML = course.sessions.map((s,i) => {
+    const state = done[i] ? 'done' : i === next ? 'current' : 'open';
+    const badge = done[i] ? '✅' : i === next ? '▶️' : '⏩';
+    return `<div class="sess ${state}" data-i="${i}" title="Open session ${i+1}">
+      <div class="snum">${i+1}</div>
+      <div class="sinfo"><strong>${s.title}</strong><small>${s.goal}</small></div>
+      <div class="badge">${badge}</div></div>`;
+  }).join('');
+  // every session is clickable — jump anywhere, revisit ✅ ones, skip ahead ⏩ — no locks
+  $('syllabus').querySelectorAll('.sess').forEach(el => {
+    el.onclick = () => openSession(+el.dataset.i, false);
+  });
+  if (doneCount() >= course.sessions.length){
+    $('course-progress').textContent = '🏆 Course complete! Well done!';
+  }
+}
+
+async function openSession(num, reteach){
+  show('loading-panel');
+  $('loading-text').innerHTML = reteach
+    ? '🔁 Re-teaching this session a different way…'
+    : `🎓 Preparing session ${num+1}: <strong>${course.sessions[num].title}</strong>…`;
+  try{
+    const res = await fetch('/course/session', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({course: course.id, session: num, reteach: !!reteach})});
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+    cs = {num, lesson: data.lesson, questions: data.questions, cpIdx: -1, cpCorrect: 0};
+    renderSessionLesson();
+    show('course-session');
+  }catch(err){
+    renderSyllabus(); show('course-syllabus');
+    $('syllabus-error').textContent = '⚠️ ' + err.message;
+    $('syllabus-error').classList.remove('hidden');
+    setTimeout(() => $('syllabus-error').classList.add('hidden'), 8000);
+  }
+}
+
+function renderSessionLesson(){
+  $('cs-label').textContent = `Session ${cs.num+1} of ${course.sessions.length}: ${course.sessions[cs.num].title}`;
+  $('cs-step').textContent = '📖 learn';
+  $('cs-bar').style.width = (cs.num / course.sessions.length * 100) + '%';
+  // course sessions use the same block engine as Teach Me
+  CTX.course.blocks = cs.blocks && cs.blocks.length ? cs.blocks
+    : [{kind:'lesson', versions:[{level: course.level || 'std', html: mdToHtml(cs.lesson)}], vIdx:0}];
+  cs.blocks = CTX.course.blocks;
+  CTX.course.activeBlk = 0;
+  renderBlocks(CTX.course);
+  $('cs-lesson').scrollTop = 0;
+  $('cs-checkpoint').classList.add('hidden');
+  $('cs-askrow').classList.remove('hidden');
+  $('cs-levels').classList.remove('hidden');
+  $('cs-back').classList.remove('hidden');
+  $('cs-continue').textContent = "I'm ready — test me ✅";
+  $('cs-continue').classList.remove('hidden');
+  $('cs-continue').onclick = startCheckpoint;
+  $('cs-back').onclick = () => { renderSyllabus(); show('course-syllabus'); };
+}
+
+function startCheckpoint(){
+  cs.cpIdx = 0; cs.cpCorrect = 0;
+  $('cs-askrow').classList.add('hidden');
+  $('cs-levels').classList.add('hidden');
+  $('cs-continue').classList.add('hidden');
+  $('cs-checkpoint').classList.remove('hidden');
+  renderCheckpointQ();
+}
+
+function renderCheckpointQ(){
+  const q = cs.questions[cs.cpIdx];
+  $('cs-step').textContent = `✅ checkpoint ${cs.cpIdx+1}/${cs.questions.length}`;
+  $('cs-qtext').textContent = q.question;
+  renderMath($('cs-qtext'));
+  $('cs-feedback').classList.add('hidden');
+  $('cs-qopts').innerHTML = '';
+  q.options.forEach((opt,i) => {
+    const b = document.createElement('button');
+    b.className = 'opt';
+    b.innerHTML = `<span class="letter">${String.fromCharCode(65+i)}</span><span>${opt.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</span>`;
+    b.onclick = () => answerCheckpoint(i, b);
+    $('cs-qopts').appendChild(b);
+  });
+  renderMath($('cs-qopts'));
+}
+
+function answerCheckpoint(i, btn){
+  const q = cs.questions[cs.cpIdx];
+  [...$('cs-qopts').children].forEach(b => b.disabled = true);
+  const correct = i === q.answer;
+  if (correct) cs.cpCorrect++;
+  $('cs-qopts').children[q.answer].classList.add('correct');
+  if (!correct) btn.classList.add('wrong');
+  const fb = $('cs-feedback');
+  fb.className = 'feedback ' + (correct ? 'good' : 'bad');
+  fb.innerHTML = (correct ? '✅ ' : '❌ ') + (q.explanation || '');
+  fb.classList.remove('hidden');
+  $('cs-continue').textContent = cs.cpIdx < cs.questions.length - 1 ? 'Next question →' : 'Finish checkpoint 🏁';
+  $('cs-continue').classList.remove('hidden');
+  $('cs-continue').onclick = () => {
+    cs.cpIdx++;
+    if (cs.cpIdx < cs.questions.length){ $('cs-continue').classList.add('hidden'); renderCheckpointQ(); }
+    else finishCheckpoint();
+  };
+}
+
+function finishCheckpoint(){
+  const total = cs.questions.length;
+  const passed = cs.cpCorrect >= Math.ceil(total * 2 / 3);  // need 2 of 3
+  $('cs-checkpoint').classList.add('hidden');
+  const fb = $('cs-feedback');
+  if (passed){
+    const done = courseDone();
+    done[cs.num] = true;
+    course.progress = doneCount();  // keep old field roughly in sync
+    saveCourseState();
+    const allDone = doneCount() >= course.sessions.length;
+    const next = done.findIndex(d => !d);  // next unfinished session (may be earlier if you skipped)
+    fb.className = 'feedback good';
+    fb.innerHTML = allDone
+      ? `🏆 <strong>${cs.cpCorrect}/${total} — passed!</strong> That was the last one — course complete. Amazing work!`
+      : `🎉 <strong>${cs.cpCorrect}/${total} — you passed this session!</strong>`;
+    fb.classList.remove('hidden');
+    $('cs-continue').textContent = allDone ? 'Back to syllabus 🏆'
+      : `Next: session ${next+1} — ${course.sessions[next].title} →`;
+    $('cs-continue').classList.remove('hidden');
+    $('cs-continue').onclick = () => {
+      if (allDone){ renderSyllabus(); show('course-syllabus'); }
+      else openSession(next, false);
+    };
+  } else {
+    fb.className = 'feedback bad';
+    fb.innerHTML = `😕 <strong>${cs.cpCorrect}/${total} — not quite yet.</strong> No stress! The tutor will explain it a different way.`;
+    fb.classList.remove('hidden');
+    $('cs-continue').textContent = '🔁 Re-teach me differently';
+    $('cs-continue').classList.remove('hidden');
+    $('cs-continue').onclick = () => openSession(cs.num, true);
+  }
+}
+
+/* ---- COURSE context: same block engine as Teach Me ---- */
+regCtx('course', {
+  el:'cs-lesson', levelsSel:'#cs-levels .level', input:'cs-ask',
+  replyBar:'cs-reply-bar', filesEl:'cs-files',
+  save: () => { if (cs && CTX.course.blocks.length) cs.blocks = CTX.course.blocks; saveCourseState(); },
+  ask: (q, lvl, files) => fetchCourseAsk(q, lvl, files),
+});
+wireLevels('course');
+wireAttach('course', 'cs-attach-btn', 'cs-camera-btn', 'cs-file-input', 'cs-camera-input');
+
+async function fetchCourseAsk(question, levelOverride, files){
+  if (!cs || !course) return null;
+  $('cs-error').classList.add('hidden');
+  $('cs-ask-send').disabled = true; $('cs-ask-send').textContent = '…';
+  try{
+    let opts;
+    const base = {course: course.id, title: course.sessions[cs.num].title,
+                  lesson: cs.lesson, question, level: levelOverride || 'std'};
+    if (files && files.length){
+      const fd = new FormData();
+      Object.entries(base).forEach(([k,v]) => fd.append(k, v));
+      files.forEach(f => fd.append('files', f));
+      opts = {method:'POST', body: fd};
+    } else {
+      opts = {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(base)};
+    }
+    const res = await fetch('/course/ask', opts);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+    return data.reply;
+  }catch(err){
+    $('cs-error').textContent = '⚠️ ' + err.message;
+    $('cs-error').classList.remove('hidden');
+    setTimeout(() => $('cs-error').classList.add('hidden'), 8000);
+    return null;
+  }finally{
+    $('cs-ask-send').disabled = false; $('cs-ask-send').textContent = 'Ask';
+  }
+}
+$('cs-ask-send').onclick = () => sendQuestion('course');
+$('cs-ask').addEventListener('keydown', e => { if (e.key === 'Enter') sendQuestion('course'); });
+
+$('course-quit').onclick = () => {
+  if (confirm('Delete this course and its progress?')){
+    if (course && course.cid) deleteCourse(course.cid);
+    course = null; cs = null;
+    renderCourseLibrary(); show('course-setup');
+  }
+};
+
+/* rebuild an expired course on the server, keeping local progress */
+async function rebuildCourse(saved){
+  show('loading-panel');
+  $('loading-text').textContent = '🎓 Restoring your course…';
+  const fd = new FormData();
+  fd.append('topic', saved.topic || saved.title);
+  fd.append('level', saved.level);
+  try{
+    const res = await fetch('/course/start', {method:'POST', body:fd});
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    // keep the old syllabus & progress; just adopt the new server-side id
+    course = {...saved, id: data.course};
+    saveCourseState();
+  }catch(e){
+    course = saved;  // stay read-only until server available
+  }
+  renderSyllabus(); show('course-syllabus');
+}
+
+
+
+/* ---------------- accounts & cross-device sync ---------------- */
+const SYNC_KEYS = ['qf-lessons','qf-courses','qf-history','qf-active-quiz','qf-active-cards'];
+let authToken = localStorage.getItem('qf-token') || null;
+let authUser  = localStorage.getItem('qf-user') || null;
+let syncTimer = null;
+
+function updateAccountBtn(){
+  $('account-btn').textContent = authUser ? `👤 ${authUser}` : '👤 Sign in';
+}
+$('account-btn').onclick = () => {
+  if (authUser){
+    if (confirm(`Signed in as ${authUser}. Sign out? (Your data stays on this device and on the server.)`)){
+      authToken = authUser = null;
+      localStorage.removeItem('qf-token'); localStorage.removeItem('qf-user');
+      updateAccountBtn();
+    }
+  } else $('account-modal').classList.remove('hidden');
+};
+$('auth-close').onclick = () => $('account-modal').classList.add('hidden');
+
+async function authCall(path){
+  $('auth-error').classList.add('hidden');
+  const username = $('auth-user').value.trim(), password = $('auth-pass').value;
+  try{
+    const res = await fetch(path, {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({username, password})});
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+    authToken = data.token; authUser = data.username;
+    localStorage.setItem('qf-token', authToken);
+    localStorage.setItem('qf-user', authUser);
+    updateAccountBtn();
+    $('account-modal').classList.add('hidden');
+    await pullSync();     // merge server copy into this device
+    scheduleSync();       // then push the merged state back
+    checkResumables();
+  }catch(err){
+    $('auth-error').textContent = '⚠️ ' + err.message;
+    $('auth-error').classList.remove('hidden');
+  }
+}
+$('auth-login').onclick = () => authCall('/auth/login');
+$('auth-register').onclick = () => authCall('/auth/register');
+
+function mergeLib(localList, remoteList){
+  const byId = {};
+  [...(remoteList||[]), ...(localList||[])].forEach(x => {
+    const id = x.id || x.cid;
+    if (!id) return;
+    if (!byId[id] || (x.saved||0) > (byId[id].saved||0)) byId[id] = x;  // newest wins
+  });
+  return Object.values(byId);
+}
+
+async function pullSync(){
+  if (!authToken) return;
+  try{
+    const res = await fetch('/sync', {headers:{'X-Auth-Token': authToken}});
+    if (!res.ok) return;
+    const remote = await res.json();
+    // merge libraries (newest version of each item wins)
+    ['qf-lessons','qf-courses'].forEach(k => {
+      const merged = mergeLib(libLoad(k), remote[k]);
+      try{ localStorage.setItem(k, JSON.stringify(merged)); }catch(e){}
+    });
+    // history: merge and dedupe by date
+    const rh = remote['qf-history'] || [], lh = JSON.parse(localStorage.getItem('qf-history') || '[]');
+    const seen = new Set(), mh = [];
+    [...lh, ...rh].sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(h => {
+      if (!seen.has(h.date)){ seen.add(h.date); mh.push(h); }
+    });
+    try{ localStorage.setItem('qf-history', JSON.stringify(mh.slice(0,100))); }catch(e){}
+  }catch(e){ /* offline is fine */ }
+}
+
+function scheduleSync(){
+  if (!authToken) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(async () => {
+    const payload = {};
+    SYNC_KEYS.forEach(k => {
+      try{ payload[k] = JSON.parse(localStorage.getItem(k) || 'null'); }catch(e){}
+    });
+    try{
+      await fetch('/sync', {method:'POST',
+        headers:{'Content-Type':'application/json','X-Auth-Token': authToken},
+        body: JSON.stringify(payload)});
+    }catch(e){ /* offline — will sync next time */ }
+  }, 2500);
+}
+
+// piggy-back sync on every local save
+const _origLibSave = libSave;
+libSave = function(key, list){ _origLibSave(key, list); scheduleSync(); };
+const _origSaveHist = saveHistory;
+saveHistory = function(pct){ _origSaveHist(pct); scheduleSync(); };
+
+/* Google sign-in (self-activates when the server has GOOGLE_CLIENT_ID configured) */
+async function initGoogleSignIn(){
+  try{
+    const res = await fetch('/config');
+    const cfg = await res.json();
+    if (!cfg.google_client_id) return;   // not configured — hide the button
+    const s = document.createElement('script');
+    s.src = 'https://accounts.google.com/gsi/client';
+    s.onload = () => {
+      google.accounts.id.initialize({
+        client_id: cfg.google_client_id,
+        callback: async (resp) => {
+          try{
+            const r = await fetch('/auth/google', {method:'POST',
+              headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({credential: resp.credential})});
+            const data = await r.json();
+            if (!r.ok) throw new Error(data.error || 'Google sign-in failed.');
+            authToken = data.token; authUser = data.username;
+            localStorage.setItem('qf-token', authToken);
+            localStorage.setItem('qf-user', authUser);
+            updateAccountBtn();
+            $('account-modal').classList.add('hidden');
+            await pullSync(); scheduleSync(); checkResumables();
+          }catch(err){
+            $('auth-error').textContent = '⚠️ ' + err.message;
+            $('auth-error').classList.remove('hidden');
+          }
+        }
+      });
+      google.accounts.id.renderButton($('google-signin-btn'),
+        {theme:'outline', size:'large', width: 280});
+      $('google-signin-wrap').classList.remove('hidden');
+    };
+    document.head.appendChild(s);
+  }catch(e){ /* offline or not configured — password login still works */ }
+}
+initGoogleSignIn();
+
+updateAccountBtn();
+if (authToken) pullSync().then(checkResumables);
+
+/* check for unfinished sessions on load */
+checkResumables();
+</script>
+<footer style="margin-top:40px; text-align:center; color:var(--muted); font-size:.85rem; line-height:1.8;">
+  <div style="font-size:1.05rem;">⚡ <strong>QuizForge</strong></div>
+  <div>Designed &amp; built by <strong style="background:linear-gradient(90deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; color:transparent; font-family:Georgia,'Times New Roman',serif; font-style:italic; font-size:1.05rem;">Festus Mensah</strong></div>
+  <div>Accra, Ghana 🇬🇭 · © <span id="footer-year"></span></div>
+  <script>document.getElementById('footer-year').textContent = new Date().getFullYear();</script>
+</footer>
+</body>
+</html>
