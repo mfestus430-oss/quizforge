@@ -70,7 +70,7 @@ Rules:
 - Multiple-choice questions: exactly 4 options, only one correct, distractors plausible.
 - When the material involves maths or statistics, prioritise definitions, formulas,
   calculations and interpretation questions, and write notation in LaTeX wrapped in $...$
-  (e.g. $x^2$, $\\bar{x}$, $\\sigma$) — the app renders it. Numeric options must look plausible.
+  (e.g. $x^2$, $\\bar{{x}}$, $\\sigma$) — the app renders it. Numeric options must look plausible.
 - Vary question styles. Do not repeat topics already covered in this list of
   existing questions (write about DIFFERENT facts/aspects): {avoid}
 - Include a ONE short sentence explanation of the correct answer (max 20 words).
