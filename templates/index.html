@@ -3,17 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MiPrep — Master Math &amp; Statistics with AI</title>
-<meta name="description" content="MiPrep is your AI math & statistics tutor: snap a problem for a step-by-step solution, get taught any math topic from scratch, and drill with quizzes, courses and flashcards. Built by Festus Mensah.">
-<meta name="keywords" content="MiPrep, AI quiz generator, study app, flashcards, exam prep, learn, Ghana">
+<title>MiPrep — Your AI study companion</title>
+<meta name="description" content="MiPrep turns your slides, PDFs, notes and photos into AI quizzes, lessons, courses and flashcards — any subject, maths to medicine. Free AI-powered study companion.">
+<meta name="keywords" content="MiPrep, AI quiz generator, study app, maths tutor, flashcards, exam prep, learn, Ghana">
 <meta name="author" content="Festus Mensah">
-<meta property="og:title" content="MiPrep — Master Math & Statistics with AI">
-<meta property="og:description" content="Snap a math problem, get the full worked solution. Learn any math or stats topic explained your way. Free AI tutor.">
+<meta property="og:title" content="MiPrep — Your AI study companion">
+<meta property="og:description" content="Turn your slides, PDFs and photos into quizzes, lessons, courses and flashcards — powered by AI. Free to use.">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="MiPrep — Master Math & Statistics with AI">
-<meta name="twitter:description" content="Your AI math & statistics tutor — solve, learn, quiz, master.">
+<meta name="twitter:title" content="MiPrep — Your AI study companion">
+<meta name="twitter:description" content="Turn your slides, PDFs and photos into AI quizzes, lessons, courses and flashcards.">
 <meta name="theme-color" content="#7c5cff">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'%3E%3Ccircle cx='48' cy='48' r='46' fill='%236a48f0'/%3E%3Cpath d='M22 54c-7-4-9-14-3-20 1-11 11-18 21-15 5-7 17-6 20 2 10 0 16 9 12 18 7 5 6 16-2 19 2 8-5 15-13 13-4 6-14 6-18 0-8 3-16-2-16-10-4-1-5-5-1-7z' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icon512.png">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
@@ -29,41 +35,89 @@
     --border:#d8dcee; --border2:#c3c9e6; --code:#e6e9f6;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
+  html{height:100%;}
   body{
     font-family:'Segoe UI',system-ui,-apple-system,sans-serif; background:var(--bg); color:var(--text);
-    min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:24px 16px 60px;
+    height:100dvh; overflow:hidden; display:flex; flex-direction:column; align-items:center;
+    overscroll-behavior:none; -webkit-tap-highlight-color:transparent;
     background-image:radial-gradient(circle at 15% 20%, rgba(124,92,255,.14), transparent 40%),
                      radial-gradient(circle at 85% 80%, rgba(0,212,166,.10), transparent 40%);
     transition:background .3s, color .3s;
   }
-  header{text-align:center; margin:6px 0 16px; position:relative; width:100%; max-width:640px;}
-  #page-pill{display:inline-block; margin-top:6px; background:var(--card); border:1px solid var(--border2);
-    border-radius:12px; padding:9px 26px; font-weight:700; font-size:1.05rem;}
-  header h1{font-size:2.2rem; letter-spacing:-.5px;}
-  header h1 span{background:linear-gradient(90deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; color:transparent;}
-  header p{color:var(--muted); margin-top:8px;}
-  #menu-btn{position:fixed; right:14px; top:14px; z-index:40; background:var(--card); border:1px solid var(--border);
-    border-radius:12px; padding:8px 13px; cursor:pointer; font-size:1.15rem; color:var(--text);}
-  .badge-dot{position:absolute; top:-6px; right:-6px; background:var(--wrong); color:#fff; border-radius:999px;
-    font-size:.7rem; font-weight:700; padding:2px 7px; border:2px solid var(--bg);}
-  #menu-btn{position:fixed;}
-  #drawer-overlay{position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:55;}
-  #drawer{position:fixed; top:0; right:0; height:100vh; width:280px; max-width:85vw; background:var(--card);
-    border-left:1px solid var(--border); z-index:60; padding:22px 16px; transform:translateX(105%);
-    transition:transform .25s; display:flex; flex-direction:column; gap:4px; overflow-y:auto;}
-  #drawer.open{transform:none;}
-  .drawer-head{font-weight:800; font-size:1.2rem; margin-bottom:14px;}
-  .drawer-item{display:flex; align-items:center; gap:12px; width:100%; padding:13px 14px; background:none;
-    border:none; color:var(--text); font-size:1.02rem; border-radius:10px; cursor:pointer; text-align:left;}
-  .drawer-item:hover{background:var(--card2);}
-  .drawer-item .dbadge{margin-left:auto; background:var(--wrong); color:#fff; border-radius:999px; font-size:.72rem; font-weight:700; padding:2px 8px;}
-  .drawer-sep{border:none; border-top:1px solid var(--border); margin:10px 0;}
-  .unfin{background:rgba(255,92,122,.1); border:1px solid var(--wrong); border-radius:12px; padding:12px 14px; margin-bottom:14px;}
-  .unfin strong{display:block; margin-bottom:6px;}
-  .tabs{display:none;}
-  #theme-btn{position:fixed; right:66px; top:14px; z-index:40; background:var(--card); border:1px solid var(--border);
-    border-radius:12px; padding:8px 12px; cursor:pointer; font-size:1.1rem;}
-  #account-bar{position:fixed; left:14px; top:14px; z-index:40;}
+  main#main{flex:1; width:100%; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
+    display:flex; flex-direction:column; align-items:center; padding:calc(76px + env(safe-area-inset-top)) 16px 46px;}
+  header{text-align:center; margin:6px 0 18px; position:relative; width:100%; max-width:640px;}
+  header p{color:var(--muted); margin-top:6px;}
+  /* ---------------- top bar ---------------- */
+  .topbar{position:fixed; top:0; left:0; right:0; z-index:38; display:flex; align-items:center; gap:10px;
+    padding:calc(10px + env(safe-area-inset-top)) 14px 10px; background:color-mix(in srgb, var(--bg) 84%, transparent);
+    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--border);}
+  .topbar .brand{font-size:1.22rem; font-weight:800; letter-spacing:-.5px; white-space:nowrap;
+    display:inline-flex; align-items:center; gap:7px;}
+  .topbar .brand span, .drawer .brand span{background:linear-gradient(90deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .topbar .spacer{flex:1;}
+  .iconbtn{position:relative; background:var(--card); border:1px solid var(--border); color:var(--text); border-radius:12px;
+    width:40px; height:40px; font-size:1.12rem; cursor:pointer; display:inline-flex; align-items:center; justify-content:center;
+    transition:.15s; flex:none;}
+  .iconbtn:hover{border-color:var(--accent); transform:translateY(-1px);}
+  .iconbtn .dot{position:absolute; top:7px; right:7px; width:9px; height:9px; border-radius:50%;
+    background:var(--accent2); box-shadow:0 0 0 2px var(--bg);}
+  #menu-btn{font-size:1.25rem;}
+  /* ---------------- drawers (menu & history) ---------------- */
+  .backdrop{position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:44; opacity:0; pointer-events:none; transition:opacity .25s;}
+  .backdrop.open{opacity:1; pointer-events:auto;}
+  .drawer{position:fixed; top:0; bottom:0; z-index:46; width:min(84vw,330px); background:var(--card);
+    display:flex; flex-direction:column; overflow-y:auto; overscroll-behavior:contain;
+    padding-top:env(safe-area-inset-top);
+    transition:transform .28s cubic-bezier(.4,0,.2,1); box-shadow:0 0 60px rgba(0,0,0,.45);}
+  .drawer.left{left:0; border-right:1px solid var(--border); transform:translateX(-105%);}
+  .drawer.right{right:0; border-left:1px solid var(--border); transform:translateX(105%);}
+  .drawer.open{transform:translateX(0);}
+  .drawer-head{display:flex; align-items:center; gap:10px; padding:18px 18px 10px; font-weight:800; font-size:1.18rem;}
+  .drawer-head .brand{letter-spacing:-.5px;}
+  .drawer-section{padding:6px 12px 16px;}
+  .drawer-label{font-size:.72rem; text-transform:uppercase; letter-spacing:.09em; color:var(--muted); padding:10px 8px 6px;}
+  .nav-item{display:flex; align-items:center; gap:12px; width:100%; text-align:left; background:none; border:none;
+    color:var(--text); font-size:1rem; font-weight:600; padding:12px 10px; border-radius:12px; cursor:pointer; transition:.15s;}
+  .nav-item:hover{background:var(--card2);}
+  .nav-item.active{background:linear-gradient(90deg,var(--accent),#9b7bff); color:#fff;}
+  .nav-item .ico{font-size:1.18rem; width:26px; text-align:center; flex:none;}
+  .drawer-foot{margin-top:auto; padding:14px 16px 18px; border-top:1px solid var(--border);}
+  .drawer-foot small{display:block; color:var(--muted); margin-top:10px; font-size:.74rem; line-height:1.45;}
+  #account-bar{display:flex; gap:10px; align-items:center; justify-content:center;}
+  /* history drawer items */
+  .hd-item{display:flex; align-items:center; gap:10px; background:var(--card2); border:1px solid var(--border2);
+    border-radius:14px; padding:11px 12px; margin-bottom:9px;}
+  .hd-item .hinfo{flex:1; min-width:0;}
+  .hd-item strong{display:block; font-size:.92rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .hd-item small{color:var(--muted); display:block; font-size:.76rem; margin-top:2px;}
+  .hd-item .btn{padding:8px 13px; font-size:.84rem; flex:none;}
+  .hd-pct{font-weight:800; font-size:.98rem; flex:none;}
+  .hd-empty{color:var(--muted); text-align:center; padding:14px 8px; font-size:.88rem; line-height:1.5;}
+  /* ---------------- splash entrance ---------------- */
+  #splash{position:fixed; inset:0; z-index:80; display:flex; flex-direction:column; align-items:center;
+    justify-content:center; background:var(--bg);
+    background-image:radial-gradient(circle at 15% 20%, rgba(124,92,255,.20), transparent 42%),
+                     radial-gradient(circle at 85% 80%, rgba(0,212,166,.14), transparent 42%);
+    transition:opacity .55s ease, visibility .55s;}
+  #splash.out{opacity:0; visibility:hidden; pointer-events:none;}
+  .splash-inner{text-align:center; padding:24px; animation:splashIn .8s cubic-bezier(.2,.7,.3,1) both;}
+  @keyframes splashIn{from{opacity:0; transform:scale(.82) translateY(16px);} to{opacity:1; transform:none;}}
+  .splash-logo{font-size:4.8rem; line-height:1; filter:drop-shadow(0 8px 30px rgba(124,92,255,.45));
+    animation:splashPulse 2.4s ease-in-out .8s infinite;}
+  @keyframes splashPulse{0%,100%{transform:scale(1);} 50%{transform:scale(1.07);}}
+  .splash-name{font-size:2.7rem; font-weight:800; letter-spacing:-1px; margin-top:14px;}
+  .splash-name span{background:linear-gradient(90deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text; background-clip:text; color:transparent;}
+  .splash-tag{color:var(--muted); margin:12px 0 38px; font-size:1.02rem;}
+  .splash-btn{font-size:1.05rem; padding:14px 44px; border-radius:999px;
+    box-shadow:0 10px 30px rgba(124,92,255,.35);}
+  .splash-credit{position:absolute; bottom:30px; left:0; right:0; text-align:center;
+    color:var(--muted); font-size:.8rem; padding:0 20px;}
+  .splash-credit strong{background:linear-gradient(90deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text; background-clip:text; color:transparent;}
   .signin-pill{background:var(--card); border:1px solid var(--border); color:var(--text);
     border-radius:999px; padding:9px 18px; font-size:.95rem; font-weight:600; cursor:pointer; transition:.15s;}
   .signin-pill:hover{border-color:var(--accent);}
@@ -75,7 +129,7 @@
   .panel{width:100%; max-width:640px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:28px; box-shadow:0 18px 50px rgba(0,0,0,.25);}
   .hidden{display:none !important;}
 
-  
+  .tabs{display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap; justify-content:center;}
   .tab{background:var(--card); border:1px solid var(--border); color:var(--muted); border-radius:12px;
     padding:10px 16px; font-size:.95rem; font-weight:600; cursor:pointer; transition:.15s;}
   .tab:hover{color:var(--text);}
@@ -215,16 +269,20 @@
   .hist-item .pct.good{color:var(--accent2);} .hist-item .pct.mid{color:var(--warn);} .hist-item .pct.bad{color:var(--wrong);}
   .hist-item small{color:var(--muted); display:block;}
 
-  /* mobile polish */
+  /* mobile polish — edge-to-edge app feel (no floating website cards) */
   @media (max-width: 560px){
-    body{padding:14px 8px 40px;}
-    header h1{font-size:1.7rem;}
-    header{margin-top:44px;}
-    #theme-btn{right:58px; top:10px; padding:7px 10px;} #menu-btn{right:10px; top:10px;}
-    #account-bar{left:10px; top:10px;}
-    .panel{padding:18px 14px;}
-    .tabs{gap:6px;}
-    .tab{padding:8px 11px; font-size:.85rem;}
+    main#main{padding:calc(66px + env(safe-area-inset-top)) 8px 26px;}
+    header{margin-top:0;}
+    .topbar{padding:calc(8px + env(safe-area-inset-top)) 10px 8px; gap:8px;}
+    .topbar .brand{font-size:1.1rem;}
+    .iconbtn{width:37px; height:37px; font-size:1.02rem;}
+    /* panels fill the screen: transparent, flush to the edges — like ChatGPT */
+    .panel{width:100%; max-width:100%; background:transparent; border:none;
+      border-radius:0; box-shadow:none; padding:6px 4px 14px;}
+    /* ...but modals stay as floating cards */
+    #account-modal .panel{background:var(--card); border:1px solid var(--border);
+      border-radius:var(--radius); box-shadow:0 18px 50px rgba(0,0,0,.35); padding:22px; max-width:400px;}
+    .drop{padding:22px 14px;}
     .qtext{font-size:1.05rem;}
     .opt{padding:12px 13px; font-size:.93rem;}
     .btn{padding:11px 18px; font-size:.98rem;}
@@ -264,32 +322,47 @@
 </style>
 </head>
 <body>
-<header>
-  <div id="page-pill">📝 Quiz Me</div>
-  <button id="theme-btn" title="Toggle light/dark">🌙</button>
-  <div id="account-bar">
-    <button id="account-btn" class="signin-pill">Sign in</button>
+<!-- SPLASH ENTRANCE -->
+<div id="splash">
+  <div class="splash-inner">
+    <div class="splash-logo">
+      <svg width="128" height="128" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <defs><radialGradient id="brnA" cx="0.35" cy="0.28" r="1.05">
+          <stop stop-color="#9b7bff"/><stop offset="1" stop-color="#4629c9"/></radialGradient></defs>
+        <circle cx="48" cy="48" r="46" fill="url(#brnA)"/>
+        <circle cx="48" cy="48" r="44.5" fill="none" stroke="#fff" stroke-opacity=".3" stroke-width="2.5"/>
+        <path d="M22 54c-7-4-9-14-3-20 1-11 11-18 21-15 5-7 17-6 20 2 10 0 16 9 12 18 7 5 6 16-2 19 2 8-5 15-13 13-4 6-14 6-18 0-8 3-16-2-16-10-4-1-5-5-1-7z" fill="#fff"/>
+        <path d="M34 30c5 2 7 7 4 11s-8 5-8 11M50 22c-2 7 2 10 2 16s-5 7-3 13M63 30c-4 5-2 10 2 13s6 8 3 13M26 47c5 1 8 5 8 10s3 8 8 8M43 68c6 1 10-2 12-7" stroke="#5a3ee8" stroke-width="4" stroke-linecap="round" fill="none"/>
+      </svg>
+    </div>
+    <div class="splash-name">Mi<span>Prep</span></div>
+    <p class="splash-tag">Your AI tutor — any subject, any level.<br>Quizzes · Lessons · Courses · Flashcards</p>
+    <button class="btn splash-btn" id="splash-go">Get Started →</button>
   </div>
-</header>
-<button id="menu-btn">☰<span id="menu-badge" class="badge-dot hidden"></span></button>
-<div id="drawer-overlay" class="hidden"></div>
-<nav id="drawer">
-  <div class="drawer-head">⚡ Mi<span style="color:var(--accent2)">Prep</span></div>
-  <button class="drawer-item" data-mode="solve">🧮 Solve</button>
-  <button class="drawer-item" data-mode="quiz">📝 Quiz Me</button>
-  <button class="drawer-item" data-mode="teach">🍎 Teach Me</button>
-  <button class="drawer-item" data-mode="course">🎓 Course</button>
-  <button class="drawer-item" data-mode="cards">🗂️ Flashcards</button>
-  <button class="drawer-item" data-mode="history">📊 History<span class="dbadge hidden" id="hist-badge"></span></button>
-  <hr class="drawer-sep">
-  <button class="drawer-item" id="drawer-account">👤 Sign in</button>
-  <button class="drawer-item" id="drawer-theme">🌙 Theme</button>
-</nav>
+  <p class="splash-credit">Made by <strong>Festus Mensah</strong> · Accra, Ghana 🇬🇭</p>
+</div>
+
+<div class="topbar">
+  <button class="iconbtn" id="menu-btn" title="Menu" aria-label="Open menu">☰</button>
+  <div class="brand">
+    <svg width="22" height="22" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="flex:none;">
+      <defs><radialGradient id="brnB" cx="0.35" cy="0.28" r="1.05">
+        <stop stop-color="#9b7bff"/><stop offset="1" stop-color="#4629c9"/></radialGradient></defs>
+      <circle cx="48" cy="48" r="46" fill="url(#brnB)"/>
+      <path d="M22 54c-7-4-9-14-3-20 1-11 11-18 21-15 5-7 17-6 20 2 10 0 16 9 12 18 7 5 6 16-2 19 2 8-5 15-13 13-4 6-14 6-18 0-8 3-16-2-16-10-4-1-5-5-1-7z" fill="#fff"/>
+      <path d="M34 30c5 2 7 7 4 11s-8 5-8 11M50 22c-2 7 2 10 2 16s-5 7-3 13M63 30c-4 5-2 10 2 13s6 8 3 13M26 47c5 1 8 5 8 10s3 8 8 8M43 68c6 1 10-2 12-7" stroke="#5a3ee8" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+    </svg>
+    Mi<span>Prep</span>
+  </div>
+  <div class="spacer"></div>
+  <button class="iconbtn" id="history-btn" title="History — unfinished lessons &amp; quizzes" aria-label="History">🕘<span class="dot hidden" id="hist-dot"></span></button>
+  <button class="iconbtn" id="theme-btn" title="Toggle light/dark">🌙</button>
+</div>
 
 <!-- ACCOUNT MODAL -->
 <div id="account-modal" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:50; display:flex; align-items:center; justify-content:center; padding:16px;">
   <div class="panel" style="max-width:400px;">
-    <h2 style="margin-bottom:6px;">👤 Your account</h2>
+    <h2 style="margin-bottom:6px;">Your account</h2>
     <p class="hint" style="margin-bottom:16px;">Sign in to back up your lessons, courses &amp; history — and continue on any device.</p>
     <div id="google-signin-wrap" class="hidden" style="margin-bottom:14px;">
       <div id="google-signin-btn" style="display:flex; justify-content:center;"></div>
@@ -306,41 +379,59 @@
   </div>
 </div>
 
+<div class="backdrop" id="drawer-backdrop"></div>
 
-<!-- SOLVE -->
-<div class="panel hidden" id="solve-panel">
-  <label style="display:block; margin-bottom:8px;">🧮 Type a math/stats problem — or snap a photo of it:</label>
-  <textarea class="teach-input" id="solve-q" rows="3" placeholder="e.g. Solve 2x² + 5x − 3 = 0   ·   or just attach a photo of the problem 📷"></textarea>
-  <div class="levels" id="solve-levels">
-    <span class="hint" style="align-self:center;">Explain:</span>
-    <button class="level active" data-level="std">✨ Standard</button>
-    <button class="level" data-level="kid">🧒 Like I'm 7</button>
-    <button class="level" data-level="teen">🎒 High school</button>
-    <button class="level" data-level="facts">⚡ Just the steps</button>
+<!-- LEFT DRAWER — MENU (all tabs + sign in) -->
+<nav class="drawer left" id="menu-drawer" aria-label="Main menu">
+  <div class="drawer-head">
+    <svg width="26" height="26" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="flex:none;">
+      <defs><radialGradient id="brnC" cx="0.35" cy="0.28" r="1.05">
+        <stop stop-color="#9b7bff"/><stop offset="1" stop-color="#4629c9"/></radialGradient></defs>
+      <circle cx="48" cy="48" r="46" fill="url(#brnC)"/>
+      <path d="M22 54c-7-4-9-14-3-20 1-11 11-18 21-15 5-7 17-6 20 2 10 0 16 9 12 18 7 5 6 16-2 19 2 8-5 15-13 13-4 6-14 6-18 0-8 3-16-2-16-10-4-1-5-5-1-7z" fill="#fff"/>
+      <path d="M34 30c5 2 7 7 4 11s-8 5-8 11M50 22c-2 7 2 10 2 16s-5 7-3 13M63 30c-4 5-2 10 2 13s6 8 3 13M26 47c5 1 8 5 8 10s3 8 8 8M43 68c6 1 10-2 12-7" stroke="#5a3ee8" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+    </svg>
+    <span class="brand">Mi<span>Prep</span></span>
   </div>
-  <div class="filelist" id="solve-files"></div>
-  <div class="row">
-    <div style="display:flex; gap:8px;">
-      <button class="btn ghost small" id="solve-attach-btn" title="Attach a photo/file">📎</button>
-      <button class="btn ghost small" id="solve-camera-btn" title="Snap the problem">📷</button>
-      <input type="file" id="solve-file-input" multiple accept=".png,.jpg,.jpeg,.webp,.bmp,.pdf,.txt,image/*" hidden>
-      <input type="file" id="solve-camera-input" accept="image/*" capture="environment" hidden>
+  <div class="drawer-section">
+    <div class="drawer-label">Study modes</div>
+    <button class="nav-item active" id="tab-quiz">Quiz Me</button>
+    <button class="nav-item" id="tab-teach">Teach Me</button>
+    <button class="nav-item" id="tab-course">Course</button>
+    <button class="nav-item" id="tab-cards">Flashcards</button>
+    <div class="drawer-label" style="margin-top:8px;">More</div>
+    <button class="nav-item" id="tab-history">Quiz history</button>
+  </div>
+  <div class="drawer-foot">
+    <div id="account-bar">
+      <button id="account-btn" class="signin-pill">Sign in</button>
     </div>
-    <button class="btn" id="solve-go">Solve it 🧮</button>
+    <small>Sign in to back up your lessons, courses &amp; history — and continue on any device.</small>
   </div>
-  <div class="error hidden" id="solve-error"></div>
-  <div class="lesson hidden" id="solve-result" style="margin-top:18px;"></div>
-  <div class="center hidden" id="solve-actions">
-    <button class="btn ghost small" id="solve-copy">📋 Copy solution</button>
-    <button class="btn ghost small" id="solve-new">🧮 New problem</button>
+</nav>
+
+<!-- RIGHT DRAWER — HISTORY (unfinished lessons & quizzes) -->
+<aside class="drawer right" id="history-drawer" aria-label="History">
+  <div class="drawer-head"><span style="font-size:1.25rem;">🕘</span> History</div>
+  <div class="drawer-section">
+    <div class="drawer-label">Unfinished — tap to continue</div>
+    <div id="hd-unfinished"></div>
+    <div class="drawer-label" style="margin-top:14px;">Recent results</div>
+    <div id="hd-recent"></div>
+    <button class="btn ghost small" id="hd-view-all" style="width:100%;">View full history</button>
   </div>
-</div>
+</aside>
+
+<main id="main">
+<header>
+  <p>Your AI tutor for <strong style="color:var(--text);">any subject</strong> — get quizzed, taught &amp; drilled.</p>
+</header>
 
 <!-- QUIZ SETUP -->
 <div class="panel" id="upload-panel">
   <div class="resume-box hidden" id="resume-quiz-box">
-    <div class="info"><strong>⏸️ Unfinished quiz found</strong><small id="resume-quiz-info"></small></div>
-    <button class="btn small" id="resume-quiz-btn">▶️ Continue</button>
+    <div class="info"><strong>Unfinished quiz found</strong><small id="resume-quiz-info"></small></div>
+    <button class="btn small" id="resume-quiz-btn">Continue</button>
     <button class="btn ghost small" id="discard-quiz-btn">🗑️ Discard</button>
   </div>
   <div class="drop" id="drop">
@@ -359,12 +450,12 @@
     </div>
     <div><label for="difficulty">Difficulty:&nbsp;</label>
       <select id="difficulty">
-        <option value="easy">😌 Easy</option>
-        <option value="medium" selected>🎯 Medium</option>
-        <option value="hard">🔥 Hard</option>
+        <option value="easy">Easy</option>
+        <option value="medium" selected>Medium</option>
+        <option value="hard">Hard</option>
       </select>
     </div>
-    <div><label for="timer-sel">⏱️ Timer:&nbsp;</label>
+    <div><label for="timer-sel">Timer:&nbsp;</label>
       <select id="timer-sel">
         <option value="0" selected>Off</option>
         <option value="10">10s / question</option>
@@ -373,12 +464,12 @@
         <option value="60">60s / question</option>
       </select>
     </div>
-    <label class="check"><input type="checkbox" id="exam-mode"> 🎓 Exam mode (results only at the end)</label>
-    <label class="check"><input type="checkbox" id="short-answers"> ✍️ Include typed short-answers (AI-graded)</label>
+    <label class="check"><input type="checkbox" id="exam-mode"> Exam mode (results only at the end)</label>
+    <label class="check"><input type="checkbox" id="short-answers"> Include typed short-answers (AI-graded)</label>
   </div>
   <div class="row">
     <span class="hint" id="bigq-hint"></span>
-    <button class="btn" id="generate" disabled>Generate quiz ✨</button>
+    <button class="btn" id="generate" disabled>Generate quiz</button>
   </div>
   <div class="error hidden" id="error"></div>
 </div>
@@ -389,21 +480,21 @@
   <label style="display:block; margin-bottom:8px;">What do you want to learn? (or leave empty and just upload material)</label>
   <input class="teach-input" id="topic" placeholder="e.g. fractions, standard deviation, photosynthesis…">
   <div class="levels">
-    <button class="level active" data-level="std">✨ Standard</button>
-    <button class="level" data-level="kid">🧒 Like I'm 7</button>
-    <button class="level" data-level="teen">🎒 High school</button>
-    <button class="level" data-level="facts">⚡ Quick facts</button>
+    <button class="level active" data-level="std">Standard</button>
+    <button class="level" data-level="kid">Like I'm 7</button>
+    <button class="level" data-level="teen">High school</button>
+    <button class="level" data-level="facts">Quick facts</button>
   </div>
   <div class="drop" id="teach-drop" style="padding:26px 20px;">
     <div class="icon">📂</div>
     <p><strong>Optional:</strong> add slides, notes or images to be taught from</p>
-    <p style="font-size:.85rem; margin-top:6px;">🖼️ Images are <em>seen</em> by the AI — diagrams, charts &amp; formulas included</p>
+    <p style="font-size:.85rem; margin-top:6px;">Images are <em>seen</em> by the AI — diagrams, charts &amp; formulas included</p>
     <input type="file" id="teach-file-input" multiple accept=".pptx,.pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.webp,.bmp,.tif,.tiff,image/*" hidden>
   </div>
   <div class="filelist" id="teach-filelist"></div>
   <div class="row">
     <span></span>
-    <button class="btn" id="teach-go">Teach me! 🍎</button>
+    <button class="btn" id="teach-go">Teach me</button>
   </div>
   <div class="error hidden" id="teach-error"></div>
 </div>
@@ -412,10 +503,10 @@
 <div class="panel hidden" id="lesson-panel">
   <div class="levels" id="lesson-levels" style="margin:0 0 8px;">
     <span class="hint" style="align-self:center;">Explain as:</span>
-    <button class="level" data-level="std">✨ Standard</button>
-    <button class="level" data-level="kid">🧒 Like I'm 7</button>
-    <button class="level" data-level="teen">🎒 High school</button>
-    <button class="level" data-level="facts">⚡ Quick facts</button>
+    <button class="level" data-level="std">Standard</button>
+    <button class="level" data-level="kid">Like I'm 7</button>
+    <button class="level" data-level="teen">High school</button>
+    <button class="level" data-level="facts">Quick facts</button>
   </div>
   <div class="lesson" id="lesson"></div>
   <div class="filelist" id="followup-files"></div>
@@ -425,12 +516,12 @@
     <button class="btn ghost small" id="camera-btn" title="Snap a photo with your camera">📷</button>
     <input type="file" id="followup-file-input" multiple accept=".pptx,.pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.webp,.bmp,.tif,.tiff,image/*" hidden>
     <input type="file" id="camera-input" accept="image/*" capture="environment" hidden>
-    <input class="teach-input" id="followup-q" placeholder="Ask a follow-up… or attach a photo/PDF 📎">
+    <input class="teach-input" id="followup-q" placeholder="Ask a follow-up… or attach a photo/PDF">
     <button class="btn" id="followup-send">Ask</button>
   </div>
   <div class="center">
-    <button class="btn ghost small" id="lesson-new">🍎 New lesson</button>
-    <button class="btn ghost small" id="lesson-quiz">📝 Quiz me on this</button>
+    <button class="btn ghost small" id="lesson-new">New lesson</button>
+    <button class="btn ghost small" id="lesson-quiz">Quiz me on this</button>
   </div>
   <div class="error hidden" id="lesson-error"></div>
 </div>
@@ -441,10 +532,10 @@
   <label style="display:block; margin-bottom:8px;">What should the course teach? (topic, or upload a book/slides/notes)</label>
   <input class="teach-input" id="course-topic" placeholder="e.g. probability, cell biology, financial accounting…">
   <div class="levels" id="course-levels">
-    <button class="level active" data-level="std">✨ Standard</button>
-    <button class="level" data-level="kid">🧒 Like I'm 7</button>
-    <button class="level" data-level="teen">🎒 High school</button>
-    <button class="level" data-level="facts">⚡ Quick facts</button>
+    <button class="level active" data-level="std">Standard</button>
+    <button class="level" data-level="kid">Like I'm 7</button>
+    <button class="level" data-level="teen">High school</button>
+    <button class="level" data-level="facts">Quick facts</button>
   </div>
   <div class="drop" id="course-drop" style="padding:26px 20px;">
     <div class="icon">📚</div>
@@ -454,7 +545,7 @@
   <div class="filelist" id="course-filelist"></div>
   <div class="row">
     <span class="hint">The AI designs a syllabus, teaches session by session, and only unlocks the next session when you pass a checkpoint ✅</span>
-    <button class="btn" id="course-go">Build my course 🎓</button>
+    <button class="btn" id="course-go">Build my course</button>
   </div>
   <div class="error hidden" id="course-error"></div>
 </div>
@@ -467,7 +558,7 @@
   </div>
   <div class="syllabus" id="syllabus"></div>
   <div class="center">
-    <button class="btn ghost small" id="course-quit">🗑️ Abandon course</button>
+    <button class="btn ghost small" id="course-quit">Abandon course</button>
   </div>
   <div class="error hidden" id="syllabus-error"></div>
 </div>
@@ -478,10 +569,10 @@
   <div class="bar"><div id="cs-bar"></div></div>
   <div class="levels" id="cs-levels" style="margin:0 0 8px;">
     <span class="hint" style="align-self:center;">Explain as:</span>
-    <button class="level" data-level="std">✨ Standard</button>
-    <button class="level" data-level="kid">🧒 Like I'm 7</button>
-    <button class="level" data-level="teen">🎒 High school</button>
-    <button class="level" data-level="facts">⚡ Quick facts</button>
+    <button class="level" data-level="std">Standard</button>
+    <button class="level" data-level="kid">Like I'm 7</button>
+    <button class="level" data-level="teen">High school</button>
+    <button class="level" data-level="facts">Quick facts</button>
   </div>
   <div class="lesson" id="cs-lesson"></div>
   <div class="filelist" id="cs-files"></div>
@@ -491,11 +582,11 @@
     <button class="btn ghost small" id="cs-camera-btn" title="Snap a photo">📷</button>
     <input type="file" id="cs-file-input" multiple accept=".pptx,.pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.webp,.bmp,.tif,.tiff,image/*" hidden>
     <input type="file" id="cs-camera-input" accept="image/*" capture="environment" hidden>
-    <input class="teach-input" id="cs-ask" placeholder="Confused? Ask… or attach a photo/PDF 📎">
+    <input class="teach-input" id="cs-ask" placeholder="Confused? Ask… or attach a photo/PDF">
     <button class="btn" id="cs-ask-send">Ask</button>
   </div>
   <div id="cs-checkpoint" class="hidden">
-    <div class="cp-title">✅ Checkpoint — show me you got it:</div>
+    <div class="cp-title">Checkpoint — show me you got it:</div>
     <div class="qtext" id="cs-qtext" style="font-size:1.05rem;"></div>
     <div class="opts" id="cs-qopts"></div>
     <div class="feedback hidden" id="cs-feedback"></div>
@@ -503,7 +594,7 @@
   <div class="navrow">
     <button class="btn ghost hidden" id="cs-back">← Syllabus</button>
     <span style="flex:1"></span>
-    <button class="btn" id="cs-continue">I'm ready — test me ✅</button>
+    <button class="btn" id="cs-continue">I'm ready — test me</button>
   </div>
   <div class="error hidden" id="cs-error"></div>
 </div>
@@ -511,8 +602,8 @@
 <!-- FLASHCARDS SETUP -->
 <div class="panel hidden" id="cards-panel">
   <div class="resume-box hidden" id="resume-cards-box">
-    <div class="info"><strong>⏸️ Previous flashcard deck found</strong><small id="resume-cards-info"></small></div>
-    <button class="btn small" id="resume-cards-btn">▶️ Continue</button>
+    <div class="info"><strong>Previous flashcard deck found</strong><small id="resume-cards-info"></small></div>
+    <button class="btn small" id="resume-cards-btn">Continue</button>
     <button class="btn ghost small" id="discard-cards-btn">🗑️ Discard</button>
   </div>
   <div class="drop" id="cards-drop">
@@ -526,7 +617,7 @@
     <div><label for="cards-count">Cards:&nbsp;</label>
       <select id="cards-count"><option>10</option><option selected>20</option><option>30</option><option>40</option><option>60</option></select>
     </div>
-    <button class="btn" id="cards-go" disabled>Make flashcards 🗂️</button>
+    <button class="btn" id="cards-go" disabled>Make flashcards</button>
   </div>
   <div class="error hidden" id="cards-error"></div>
 </div>
@@ -547,16 +638,16 @@
     <button class="btn small" id="fc-next">Next →</button>
   </div>
   <div class="center">
-    <button class="btn ghost small" id="fc-new">📂 New cards</button>
+    <button class="btn ghost small" id="fc-new">New cards</button>
   </div>
 </div>
 
 <!-- HISTORY -->
 <div class="panel hidden" id="history-panel">
-  <h2 style="margin-bottom:16px;">📊 Your quiz history</h2>
+  <h2 style="margin-bottom:16px;">Your quiz history</h2>
   <div id="hist-list"></div>
   <div class="center">
-    <button class="btn ghost small" id="hist-clear">🗑️ Clear history</button>
+    <button class="btn ghost small" id="hist-clear">Clear history</button>
   </div>
 </div>
 
@@ -595,11 +686,12 @@
   <div class="sub" id="sub"></div>
   <div class="review" id="review"></div>
   <div class="center">
-    <button class="btn" id="retry">🔁 Retake quiz</button>
-    <button class="btn ghost" id="export-quiz">📥 Export printable quiz</button>
-    <button class="btn ghost" id="newfiles">📂 New files</button>
+    <button class="btn" id="retry">Retake quiz</button>
+    <button class="btn ghost" id="export-quiz">Export printable quiz</button>
+    <button class="btn ghost" id="newfiles">New files</button>
   </div>
 </div>
+</main>
 
 <script>
 const $ = id => document.getElementById(id);
@@ -618,23 +710,111 @@ applyTheme(localStorage.getItem('qf-theme') || 'dark');
 
 /* ---------------- panels & tabs ---------------- */
 const PANELS = ['upload-panel','loading-panel','quiz-panel','result-panel','teach-panel','lesson-panel',
-                'cards-panel','cards-player','history-panel','course-setup','course-syllabus','course-session','solve-panel'];
+                'cards-panel','cards-player','history-panel','course-setup','course-syllabus','course-session'];
 function show(panel){ PANELS.forEach(p => $(p).classList.add('hidden')); $(panel).classList.remove('hidden'); }
 
-const TABS = {solve:'tab-solve', quiz:'tab-quiz', teach:'tab-teach', course:'tab-course', cards:'tab-cards', history:'tab-history'};
+const TABS = {quiz:'tab-quiz', teach:'tab-teach', course:'tab-course', cards:'tab-cards', history:'tab-history'};
 let mode = 'quiz';
-const MODE_NAMES = {solve:'🧮 Solve', quiz:'📝 Quiz Me', teach:'🍎 Teach Me', course:'🎓 Course', cards:'🗂️ Flashcards', history:'📊 History'};
+Object.entries(TABS).forEach(([m, id]) => $(id).onclick = () => switchMode(m));
 function switchMode(m){
   mode = m;
-  $('page-pill').textContent = MODE_NAMES[m] || 'MiPrep';
+  Object.entries(TABS).forEach(([mm, id]) => $(id).classList.toggle('active', mm === m));
   clearTimer();
+  closeDrawers();
   checkResumables();
-  if (m === 'solve') show('solve-panel');
-  else if (m === 'quiz') show('upload-panel');
+  if (m === 'quiz') show('upload-panel');
   else if (m === 'teach') show('teach-panel');
   else if (m === 'course') show(course ? 'course-syllabus' : 'course-setup'), course && renderSyllabus();
   else if (m === 'cards') show(cardsDeck.length ? 'cards-player' : 'cards-panel');
   else { renderHistory(); show('history-panel'); }
+}
+
+/* ---------------- top bar drawers (menu & history) ---------------- */
+function openDrawer(which){
+  closeDrawers();
+  $('drawer-backdrop').classList.add('open');
+  $(which).classList.add('open');
+}
+function closeDrawers(){
+  $('drawer-backdrop').classList.remove('open');
+  $('menu-drawer').classList.remove('open');
+  $('history-drawer').classList.remove('open');
+}
+$('menu-btn').onclick = () => openDrawer('menu-drawer');
+$('history-btn').onclick = () => { renderHistoryDrawer(); openDrawer('history-drawer'); };
+$('drawer-backdrop').onclick = closeDrawers;
+$('hd-view-all').onclick = () => switchMode('history');
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDrawers(); });
+
+/* ---------------- splash entrance ---------------- */
+$('splash-go').onclick = () => {
+  const sp = $('splash');
+  sp.classList.add('out');
+  setTimeout(() => sp.remove(), 700);
+  // orient new users: slide the menu open so they see what MiPrep can do
+  openDrawer('menu-drawer');
+};
+
+function resumeActiveQuiz(){
+  const s = loadQuizState();
+  if (!s) return;
+  quiz = s.quiz; idx = s.idx; score = s.score; answers = s.answers || [];
+  engineUsed = s.engineUsed; examMode = s.examMode; timerSecs = s.timerSecs;
+  quizSource = s.quizSource || '';
+  show('quiz-panel'); renderQuestion();
+}
+function resumeActiveCards(){
+  const s = loadCardsState();
+  if (!s) return;
+  cardsDeck = s.deck; cardIdx = Math.min(s.idx, s.deck.length - 1);
+  show('cards-player'); renderCard();
+}
+
+function renderHistoryDrawer(){
+  const esc = t => String(t || '').replace(/</g, '&lt;');
+  const rows = [];
+  // unfinished quiz
+  const q = loadQuizState();
+  if (q && q.quiz && q.idx < q.quiz.length)
+    rows.push(`<div class="hd-item"><div class="hinfo"><strong>📝 ${esc(q.quizSource || 'Quiz')}</strong>` +
+      `<small>question ${q.idx + 1} of ${q.quiz.length} · ${ago(q.saved)}</small></div>` +
+      `<button class="btn small" onclick="resumeActiveQuiz()">Continue</button></div>`);
+  // unfinished courses
+  libLoad('qf-courses').sort((a,b) => b.saved - a.saved).forEach(c => {
+    const d = (c.done || []).filter(Boolean).length, t = (c.sessions || []).length;
+    if (d < t)
+      rows.push(`<div class="hd-item"><div class="hinfo"><strong>🎓 ${esc(c.title || 'Course')}</strong>` +
+        `<small>session ${d + 1} of ${t} · ${ago(c.saved)}</small></div>` +
+        `<button class="btn small" onclick="openCourse('${c.cid}')">Continue</button></div>`);
+  });
+  // saved lessons (resumable conversations)
+  libLoad('qf-lessons').sort((a,b) => b.saved - a.saved).slice(0, 5).forEach(l => {
+    rows.push(`<div class="hd-item"><div class="hinfo"><strong>🍎 ${esc(l.topic || 'Lesson')}</strong>` +
+      `<small>${ago(l.saved)}</small></div>` +
+      `<button class="btn small" onclick="openLesson('${l.id}')">Continue</button></div>`);
+  });
+  // unfinished flashcards
+  const c = loadCardsState();
+  if (c && c.deck && c.deck.length)
+    rows.push(`<div class="hd-item"><div class="hinfo"><strong>🗂️ Flashcard deck</strong>` +
+      `<small>card ${Math.min(c.idx + 1, c.deck.length)} of ${c.deck.length} · ${ago(c.saved)}</small></div>` +
+      `<button class="btn small" onclick="resumeActiveCards()">Continue</button></div>`);
+
+  $('hd-unfinished').innerHTML = rows.length
+    ? rows.join('')
+    : '<div class="hd-empty">Nothing unfinished — start a quiz or lesson from the menu</div>';
+  $('hist-dot').classList.toggle('hidden', rows.length === 0);
+
+  const hist = JSON.parse(localStorage.getItem('qf-history') || '[]');
+  $('hd-recent').innerHTML = hist.length === 0
+    ? '<div class="hd-empty">No quiz results yet</div>'
+    : hist.slice(0, 4).map(h => {
+        const col = h.pct >= 70 ? 'var(--accent2)' : h.pct >= 40 ? 'var(--warn)' : 'var(--wrong)';
+        const d = new Date(h.date);
+        return `<div class="hd-item"><div class="hinfo"><strong>📝 ${esc(h.source || 'Quiz')}</strong>` +
+          `<small>${d.toLocaleDateString()} · ${h.total} q · ${h.difficulty}${h.exam ? ' · 🎓' : ''}</small></div>` +
+          `<span class="hd-pct" style="color:${col}">${h.pct}%</span></div>`;
+      }).join('');
 }
 
 /* ---------------- file pickers (generic) ---------------- */
@@ -762,10 +942,10 @@ function openLesson(id){
 function renderLessonLibrary(){
   const lib = libLoad('qf-lessons').sort((a,b) => b.saved - a.saved);
   $('lesson-library').innerHTML = lib.length === 0 ? '' :
-    `<label style="display:block;margin-bottom:8px;">📚 Your lessons — continue any of them:</label>` +
+    `<label style="display:block;margin-bottom:8px;">Your lessons — continue any of them:</label>` +
     lib.map(l => `<div class="lib-item">
-      <div class="linfo"><strong>🍎 ${l.topic.replace(/</g,'&lt;')}</strong><small>${ago(l.saved)} · ${l.level === 'std' ? '✨' : l.level === 'kid' ? '🧒' : l.level === 'teen' ? '🎒' : '⚡'}</small></div>
-      <button class="btn small" onclick="openLesson('${l.id}')">▶️ Continue</button>
+      <div class="linfo"><strong>🍎 ${l.topic.replace(/</g,'&lt;')}</strong><small>${ago(l.saved)} · ${l.level === 'std' ? 'Standard' : l.level === 'kid' ? "Like I'm 7" : l.level === 'teen' ? 'High school' : 'Quick facts'}</small></div>
+      <button class="btn small" onclick="openLesson('${l.id}')">Continue</button>
       <button class="btn ghost small" onclick="deleteLesson('${l.id}')">🗑️</button>
     </div>`).join('') + `<hr class="divider">`;
 }
@@ -808,24 +988,13 @@ function checkResumables(){
     $('resume-cards-box').classList.remove('hidden');
   } else $('resume-cards-box').classList.add('hidden');
 
+  renderHistoryDrawer();
 }
 
-$('resume-quiz-btn').onclick = () => {
-  const s = loadQuizState();
-  if (!s) return;
-  quiz = s.quiz; idx = s.idx; score = s.score; answers = s.answers || [];
-  engineUsed = s.engineUsed; examMode = s.examMode; timerSecs = s.timerSecs;
-  quizSource = s.quizSource || '';
-  show('quiz-panel'); renderQuestion();
-};
+$('resume-quiz-btn').onclick = resumeActiveQuiz;
 $('discard-quiz-btn').onclick = () => { clearQuizState(); checkResumables(); };
 
-$('resume-cards-btn').onclick = () => {
-  const s = loadCardsState();
-  if (!s) return;
-  cardsDeck = s.deck; cardIdx = Math.min(s.idx, s.deck.length - 1);
-  show('cards-player'); renderCard();
-};
+$('resume-cards-btn').onclick = resumeActiveCards;
 $('discard-cards-btn').onclick = () => { clearCardsState(); checkResumables(); };
 
 /* ---------------- quiz generation ---------------- */
@@ -836,8 +1005,8 @@ $('generate').onclick = async () => {
   timerSecs = +$('timer-sel').value;
   show('loading-panel');
   $('loading-text').innerHTML = n >= 50
-    ? `🧠 Generating <strong>${n}</strong> questions in batches…<br><small>this can take a few minutes — don't close the page</small>`
-    : '🧠 The AI is reading your material and writing questions…';
+    ? `Generating <strong>${n}</strong> questions in batches…<br><small>this can take a few minutes — don't close the page</small>`
+    : 'The AI is reading your material and writing questions…';
   const fd = new FormData();
   quizFiles.list.forEach(f => fd.append('files', f));
   fd.append('num_questions', n);
@@ -845,8 +1014,34 @@ $('generate').onclick = async () => {
   fd.append('include_short', $('short-answers').checked ? '1' : '0');
   try{
     const res = await fetch('/upload', {method:'POST', body:fd});
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+    if (!res.ok){
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Something went wrong.');
+    }
+    let data = null;
+    if (res.body && window.ReadableStream){
+      // NDJSON stream: progress lines, then the final quiz payload
+      const reader = res.body.getReader(), dec = new TextDecoder();
+      let buf = '';
+      while (true){
+        const {done, value} = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, {stream:true});
+        let nl;
+        while ((nl = buf.indexOf('\n')) >= 0){
+          const line = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1);
+          if (!line) continue;
+          const evt = JSON.parse(line);
+          if (evt.error) throw new Error(evt.error);
+          if (evt.progress !== undefined){
+            $('loading-text').innerHTML = `Writing questions — <strong>${evt.progress}/${evt.total}</strong> ready<br><small>keep this page open…</small>`;
+          } else if (evt.quiz) data = evt;
+        }
+      }
+    } else {
+      data = await res.json();
+    }
+    if (!data || !data.quiz) throw new Error('Something went wrong.');
     quiz = data.quiz; engineUsed = data.engine || 'basic';
     quizSource = data.source || quizFiles.list.map(f=>f.name).join(', ');
     startQuiz();
@@ -883,7 +1078,7 @@ function startTimer(){
 function onTimeout(){
   const q = quiz[idx];
   if (q.type === 'short'){
-    recordShort('', {verdict:'wrong', feedback:'⏱️ Time up! ' + (q.explanation || 'Model answer: ' + q.answer)});
+    recordShort('', {verdict:'wrong', feedback:'Time up! ' + (q.explanation || 'Model answer: ' + q.answer)});
   } else {
     recordMcq(-1);
   }
@@ -893,7 +1088,7 @@ function onTimeout(){
 function renderQuestion(){
   const q = quiz[idx];
   const done = answers[idx];   // already answered? -> review state
-  $('q-count').innerHTML = `Question ${idx+1} of ${quiz.length} &nbsp;<span style="background:${engineUsed==='ai'?'rgba(0,212,166,.15)':'var(--card2)'};border-radius:99px;padding:2px 10px;font-size:.75rem;">${engineUsed==='ai'?'🧠 AI':'⚙️ basic'}${examMode?' · 🎓 exam':''}</span>${done ? ' <span style="background:rgba(124,92,255,.18);border-radius:99px;padding:2px 10px;font-size:.75rem;">👁️ answered</span>' : ''}`;
+  $('q-count').innerHTML = `Question ${idx+1} of ${quiz.length} &nbsp;<span style="background:${engineUsed==='ai'?'rgba(0,212,166,.15)':'var(--card2)'};border-radius:99px;padding:2px 10px;font-size:.75rem;">${engineUsed==='ai'?'AI':'basic engine'}${examMode?' · 🎓 exam':''}</span>${done ? ' <span style="background:rgba(124,92,255,.18);border-radius:99px;padding:2px 10px;font-size:.75rem;">answered</span>' : ''}`;
   $('q-score').textContent = examMode ? '' : `Score: ${fmtScore(score)}`;
   $('bar-fill').style.width = (idx / quiz.length * 100) + '%';
   $('q-text').textContent = q.question;
@@ -982,7 +1177,7 @@ function recordMcq(i, btn){
   if (!correct && btn) btn.classList.add('wrong');
   const fb = $('feedback');
   fb.className = 'feedback ' + (correct ? 'good' : 'bad');
-  fb.innerHTML = (i < 0 ? '⏱️ <strong>Time up!</strong> ' : correct ? '✅ <strong>Correct!</strong> ' : `❌ <strong>Not quite.</strong> `) +
+  fb.innerHTML = (i < 0 ? '<strong>Time up!</strong> ' : correct ? '✅ <strong>Correct!</strong> ' : `❌ <strong>Not quite.</strong> `) +
     (!correct ? `The answer is “${q.options[q.answer]}”. ` : '') + (q.explanation || '');
   renderMath(fb);
   fb.classList.remove('hidden');
@@ -1035,7 +1230,7 @@ function recordShort(val, result){
 }
 
 function showNext(){
-  $('next').textContent = idx === quiz.length - 1 ? 'See results 🏁' : 'Next →';
+  $('next').textContent = idx === quiz.length - 1 ? 'See results' : 'Next →';
   $('next').classList.remove('hidden');
 }
 $('next').onclick = nextQuestion;
@@ -1054,10 +1249,10 @@ function showResults(){
   $('circle').style.setProperty('--pct', pct);
   $('pct-label').textContent = pct + '%';
   $('score-label').textContent = `${fmtScore(score)} / ${quiz.length}`;
-  $('verdict').textContent = pct >= 80 ? '🏆 Excellent — you know this material!'
-                     : pct >= 60 ? '👍 Good job — nearly there!'
-                     : pct >= 40 ? '📖 Getting there — one more review will help.'
-                     : '💪 Keep studying — try again after a re-read.';
+  $('verdict').textContent = pct >= 80 ? 'Excellent — you know this material!'
+                     : pct >= 60 ? 'Good job — nearly there!'
+                     : pct >= 40 ? 'Getting there — one more review will help.'
+                     : 'Keep studying — try again after a re-read.';
   $('sub').textContent = examMode ? 'Exam mode — full review below.' : 'Review your answers below.';
   const icon = v => v === 'correct' ? '✅' : v === 'partial' ? '🟡' : '❌';
   $('review').innerHTML = answers.map(a =>
@@ -1076,27 +1271,10 @@ function saveHistory(pct){
                 difficulty: $('difficulty').value, exam: examMode});
   localStorage.setItem('qf-history', JSON.stringify(hist.slice(0,100)));
 }
-function renderUnfinished(){
-  let html = '';
-  const q = loadQuizState();
-  if (q && q.quiz && q.idx < q.quiz.length)
-    html += `<div class="unfin"><strong>⏸️ Unfinished quiz</strong>${q.quizSource || 'Quiz'} — question ${q.idx+1} of ${q.quiz.length}, saved ${ago(q.saved)}
-      <div class="center" style="margin-top:8px;"><button class="btn small" onclick="switchMode('quiz')">▶️ Continue</button></div></div>`;
-  const c = loadCardsState();
-  if (c && c.deck && c.deck.length)
-    html += `<div class="unfin"><strong>⏸️ Flashcard deck</strong>${c.deck.length} cards — card ${c.idx+1}, saved ${ago(c.saved)}
-      <div class="center" style="margin-top:8px;"><button class="btn small" onclick="switchMode('cards')">▶️ Continue</button></div></div>`;
-  libLoad('qf-courses').forEach(co => {
-    const d = (co.done||[]).filter(Boolean).length, t = (co.sessions||[]).length;
-    if (d < t) html += `<div class="unfin"><strong>⏸️ Course: ${(co.title||'Course').replace(/</g,'&lt;')}</strong>${d}/${t} sessions done, saved ${ago(co.saved)}
-      <div class="center" style="margin-top:8px;"><button class="btn small" onclick="openCourse('${co.cid}')">▶️ Continue</button></div></div>`;
-  });
-  return html ? `<h3 style="margin:0 0 10px;">🔔 Unfinished — pick up where you left off</h3>${html}<hr class="divider">` : '';
-}
 function renderHistory(){
   const hist = JSON.parse(localStorage.getItem('qf-history') || '[]');
-  $('hist-list').innerHTML = renderUnfinished() + (hist.length === 0
-    ? '<p style="color:var(--muted)">No quizzes taken yet. Your scores will appear here. 📈</p>'
+  $('hist-list').innerHTML = hist.length === 0
+    ? '<p style="color:var(--muted)">No quizzes taken yet. Your scores will appear here.</p>'
     : hist.map(h => {
         const d = new Date(h.date);
         const cls = h.pct >= 70 ? 'good' : h.pct >= 40 ? 'mid' : 'bad';
@@ -1104,7 +1282,7 @@ function renderHistory(){
           <div><strong>${h.source || 'Quiz'}</strong>
           <small>${d.toLocaleDateString()} ${d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})} · ${h.total} questions · ${h.difficulty}${h.exam ? ' · 🎓 exam' : ''}</small></div>
           <div class="pct ${cls}">${h.pct}%<small style="text-align:right">${h.score}/${h.total}</small></div>
-        </div>`; }).join(''));
+        </div>`; }).join('');
 }
 $('hist-clear').onclick = () => { localStorage.removeItem('qf-history'); renderHistory(); };
 
@@ -1119,9 +1297,8 @@ $('export-quiz').onclick = () => {
   h1{border-bottom:3px solid #333;padding-bottom:8px} .q{margin:18px 0 6px;font-weight:bold}
   ol.opts{list-style:upper-alpha;margin-left:28px} .key{page-break-before:always}
   .blank{border-bottom:1px solid #999;display:inline-block;min-width:280px}</style></head><body>
-  <h1>⚡ MiPrep — ${esc(quizSource || 'Quiz')}</h1>
-  <p>${quiz.length} questions · ${esc($('difficulty').value)} difficulty · generated ${new Date().toLocaleDateString()}</p>
-  <p style="font-style:italic; color:#555;">MiPrep — built by Festus Mensah</p>`;
+  <h1>MiPrep — ${esc(quizSource || 'Quiz')}</h1>
+  <p>${quiz.length} questions · ${esc($('difficulty').value)} difficulty · generated ${new Date().toLocaleDateString()}</p>`;
   quiz.forEach((q,i) => {
     html += `<div class="q">${i+1}. ${esc(q.question)}</div>`;
     if (q.type === 'short') html += `<p>Answer: <span class="blank">&nbsp;</span></p>`;
@@ -1138,7 +1315,7 @@ $('export-quiz').onclick = () => {
   a.download = 'miprep_printable.html';
   a.click();
   URL.revokeObjectURL(a.href);
-  alert('📥 Downloaded! Open the file and use your browser\'s Print → "Save as PDF" for a PDF copy.');
+  alert('Downloaded! Open the file and use your browser\'s Print → "Save as PDF" for a PDF copy.');
 };
 
 /* ---------------- teach mode ---------------- */
@@ -1158,22 +1335,56 @@ $('teach-go').onclick = async () => {
   }
   $('teach-error').classList.add('hidden');
   show('loading-panel');
-  $('loading-text').innerHTML = '🍎 Your tutor is preparing the lesson…<br><small>(reading any uploaded material, including images)</small>';
+  $('loading-text').innerHTML = 'Your tutor is preparing the lesson…<br><small>(reading any uploaded material, including images)</small>';
   const fd = new FormData();
   fd.append('topic', topic);
   fd.append('level', teachLevel);
   teachFilesStore.list.forEach(f => fd.append('files', f));
   try{
-    const res = await fetch('/teach', {method:'POST', body:fd});
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Something went wrong.');
-    teachSession = data.session;
-    currentLessonId = null;  // new lesson -> new library entry
-    CTX.teach.blocks = [{kind:'lesson', versions:[{level: teachLevel, html: mdToHtml(data.reply)}], vIdx:0}];
+    const res = await fetch('/teach/stream', {method:'POST', body:fd});
+    if (!res.ok || !res.body){
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Something went wrong.');
+    }
+    // stream the lesson live, word by word
+    currentLessonId = null;
+    CTX.teach.blocks = [{kind:'lesson', versions:[{level: teachLevel, html:''}], vIdx:0}];
     CTX.teach.activeBlk = 0;
-    renderBlocks(CTX.teach);
+    let raw = '', meta = null, lastPaint = 0, pending = false, started = false;
+    const paint = () => {
+      pending = false;
+      let text = raw;
+      const mi = text.indexOf('\n\x01');
+      if (mi >= 0){
+        try{ meta = JSON.parse(text.slice(mi + 2).trim() || '{}'); }catch(e){}
+        text = text.slice(0, mi);
+      }
+      if (!text && !started) return;
+      started = true;
+      CTX.teach.blocks[0].versions[0].html = mdToHtml(text || '…');
+      renderBlocks(CTX.teach);
+      show('lesson-panel');
+      const el = $('lesson');
+      el.scrollTop = el.scrollHeight;
+      renderMath(el);
+    };
+    const reader = res.body.getReader(), dec = new TextDecoder();
+    while (true){
+      const {done, value} = await reader.read();
+      if (done) break;
+      raw += dec.decode(value, {stream:true});
+      if (raw.startsWith('\x02')) continue;   // fatal error marker — handled after the loop
+      if (raw.indexOf('\n\x01') < 0){   // don't paint the meta marker
+        const now = Date.now();
+        if (now - lastPaint >= 200){ lastPaint = now; paint(); }
+        else if (!pending){ pending = true; setTimeout(paint, 200); }
+      }
+    }
+    if (raw.startsWith('\x02'))
+      throw new Error(raw.slice(1).trim() || 'The tutor is unavailable right now.');
+    paint();
+    if (meta && meta.session) teachSession = meta.session;
     $('lesson').scrollTop = 0;
-    show('lesson-panel');
     saveLessonState();
   }catch(err){
     show('teach-panel');
@@ -1186,7 +1397,7 @@ $('teach-go').onclick = async () => {
    Vertical chat of blocks; each block flips horizontally between at most 4
    level versions: ✨ Standard · 🧒 Like I'm 7 · 🎒 High school · ⚡ Quick facts.
    Drag a block right (or tap ↩️) to reply to it, WhatsApp-style. */
-const LEVEL_NAMES = {std:'✨ Standard', kid:"🧒 Like I'm 7", teen:'🎒 High school', facts:'⚡ Quick facts'};
+const LEVEL_NAMES = {std:'Standard', kid:"Like I'm 7", teen:'High school', facts:'Quick facts'};
 const LEVEL_ASK = {std:'in your normal clear style ✨', kid:"like I'm 7 🧒", teen:'at high-school level 🎒', facts:'as a rapid fact sheet: key facts, formulas with symbols explained, and classic traps — no prose ⚡'};
 const MAX_VERSIONS = 4;   // hard cap: one page per level
 const CTX = {};
@@ -1219,7 +1430,7 @@ function blkHtml(ctx, i){
          <button onclick="flipBlk('${ctx.name}',${i},1)" ${b.vIdx===b.versions.length-1?'disabled':''}>›</button>
        </div>` : '';
   const qPart = b.kind === 'q'
-    ? `<div class="bubble-q">🙋 ${escH(b.question)}</div>
+    ? `<div class="bubble-q">${escH(b.question)}</div>
        <div class="blk-actions">
          <button onclick="blkAct('${ctx.name}',${i},'copyq',this)">📋 Copy</button>
          <button onclick="blkAct('${ctx.name}',${i},'editq',this)">✏️ Edit</button>
@@ -1230,7 +1441,7 @@ function blkHtml(ctx, i){
        ${b.kind!=='q' ? `<button onclick="blkAct('${ctx.name}',${i},'reply',this)">↩️ Reply</button>` : ''}
      </div>`;
   return `<div class="blk" id="${ctx.name}-blk-${i}" data-i="${i}">
-    <div class="blk-head"><span class="page-tag">${b.kind==='q'?'🙋':'📖'} ${LEVEL_NAMES[v.level]}</span>${nav}</div>
+    <div class="blk-head"><span class="page-tag">${LEVEL_NAMES[v.level]}</span>${nav}</div>
     ${qPart}<div class="blk-body" id="${ctx.name}-blk-body-${i}">${v.html}</div>${aActions}
   </div>`;
 }
@@ -1396,7 +1607,7 @@ async function sendQuestion(ctxName){
     label = `↩️ ${reply2.excerpt.slice(0, 45)}… — ${label}`;
   }
   const chips = atts.length ? `<div style="margin:6px 0 0; font-size:.85rem; color:var(--muted);">${atts.map(f => '📎 ' + escH(f.name)).join(' · ')}</div>` : '';
-  $(ctx.el).innerHTML += `<div class="blk" id="${ctx.name}-thinking"><div class="bubble-q">🙋 ${escH(label)}${chips}</div><p><em>${atts.length ? '👀 reading your attachment…' : '✏️ thinking…'}</em></p></div>`;
+  $(ctx.el).innerHTML += `<div class="blk" id="${ctx.name}-thinking"><div class="bubble-q">${escH(label)}${chips}</div><p><em>${atts.length ? 'reading your attachment…' : 'thinking…'}</em></p></div>`;
   $(ctx.el).scrollTop = $(ctx.el).scrollHeight;
   const reply = await ctx.ask(aiQ, 'std', atts);
   document.getElementById(`${ctx.name}-thinking`)?.remove();
@@ -1513,7 +1724,7 @@ let cardsDeck = [], cardIdx = 0;
 $('cards-go').onclick = async () => {
   $('cards-error').classList.add('hidden');
   show('loading-panel');
-  $('loading-text').textContent = '🗂️ Building your flashcards…';
+  $('loading-text').textContent = 'Building your flashcards…';
   const fd = new FormData();
   cardFiles.list.forEach(f => fd.append('files', f));
   fd.append('count', $('cards-count').value);
@@ -1539,7 +1750,7 @@ function renderCard(){
     renderMath($('fc-front')); renderMath($('fc-back'));
   }, 150);
   $('fc-count').textContent = `Card ${cardIdx+1} of ${cardsDeck.length}`;
-  $('fc-progress').textContent = '💡 Front: question · Back: answer';
+  $('fc-progress').textContent = 'Front: question · Back: answer';
 }
 $('fcard').onclick = () => $('fcard').classList.toggle('flipped');
 $('fc-next').onclick = () => { cardIdx = (cardIdx + 1) % cardsDeck.length; renderCard(); saveCardsState(); };
@@ -1580,14 +1791,14 @@ function openCourse(cid){
 function renderCourseLibrary(){
   const lib = libLoad('qf-courses').sort((a,b) => b.saved - a.saved);
   $('course-library').innerHTML = lib.length === 0 ? '' :
-    `<label style="display:block;margin-bottom:8px;">🎓 Your courses — continue any of them:</label>` +
+    `<label style="display:block;margin-bottom:8px;">Your courses — continue any of them:</label>` +
     lib.map(c => {
       const d = (c.done || []).filter(Boolean).length;
       const total = (c.sessions || []).length;
-      const doneBadge = d >= total ? '🏆 complete' : `${d}/${total} sessions`;
+      const doneBadge = d >= total ? 'complete' : `${d}/${total} sessions`;
       return `<div class="lib-item">
         <div class="linfo"><strong>🎓 ${(c.title || 'Course').replace(/</g,'&lt;')}</strong><small>${doneBadge} · ${ago(c.saved)}</small></div>
-        <button class="btn small" onclick="openCourse('${c.cid}')">▶️ Continue</button>
+        <button class="btn small" onclick="openCourse('${c.cid}')">Continue</button>
         <button class="btn ghost small" onclick="deleteCourse('${c.cid}')">🗑️</button>
       </div>`;
     }).join('') + `<hr class="divider">`;
@@ -1603,7 +1814,7 @@ $('course-go').onclick = async () => {
   }
   $('course-error').classList.add('hidden');
   show('loading-panel');
-  $('loading-text').innerHTML = '🎓 Designing your course syllabus…';
+  $('loading-text').innerHTML = 'Designing your course syllabus…';
   const fd = new FormData();
   fd.append('topic', topic);
   fd.append('level', courseLevel);
@@ -1638,26 +1849,26 @@ function renderSyllabus(){
   $('course-progress').textContent = `${doneCount()} of ${course.sessions.length} sessions completed`;
   $('syllabus').innerHTML = course.sessions.map((s,i) => {
     const state = done[i] ? 'done' : i === next ? 'current' : 'open';
-    const badge = done[i] ? '✅' : i === next ? '▶️' : '⏩';
+    const badge = done[i] ? '✅' : i === next ? '▶' : '»';
     return `<div class="sess ${state}" data-i="${i}" title="Open session ${i+1}">
       <div class="snum">${i+1}</div>
       <div class="sinfo"><strong>${s.title}</strong><small>${s.goal}</small></div>
       <div class="badge">${badge}</div></div>`;
   }).join('');
-  // every session is clickable — jump anywhere, revisit ✅ ones, skip ahead ⏩ — no locks
+  // every session is clickable — jump anywhere, revisit done ones, skip ahead — no locks
   $('syllabus').querySelectorAll('.sess').forEach(el => {
     el.onclick = () => openSession(+el.dataset.i, false);
   });
   if (doneCount() >= course.sessions.length){
-    $('course-progress').textContent = '🏆 Course complete! Well done!';
+    $('course-progress').textContent = 'Course complete! Well done!';
   }
 }
 
 async function openSession(num, reteach){
   show('loading-panel');
   $('loading-text').innerHTML = reteach
-    ? '🔁 Re-teaching this session a different way…'
-    : `🎓 Preparing session ${num+1}: <strong>${course.sessions[num].title}</strong>…`;
+    ? 'Re-teaching this session a different way…'
+    : `Preparing session ${num+1}: <strong>${course.sessions[num].title}</strong>…`;
   try{
     const res = await fetch('/course/session', {method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({course: course.id, session: num, reteach: !!reteach})});
@@ -1689,7 +1900,7 @@ function renderSessionLesson(){
   $('cs-askrow').classList.remove('hidden');
   $('cs-levels').classList.remove('hidden');
   $('cs-back').classList.remove('hidden');
-  $('cs-continue').textContent = "I'm ready — test me ✅";
+  $('cs-continue').textContent = "I'm ready — test me";
   $('cs-continue').classList.remove('hidden');
   $('cs-continue').onclick = startCheckpoint;
   $('cs-back').onclick = () => { renderSyllabus(); show('course-syllabus'); };
@@ -1732,7 +1943,7 @@ function answerCheckpoint(i, btn){
   fb.className = 'feedback ' + (correct ? 'good' : 'bad');
   fb.innerHTML = (correct ? '✅ ' : '❌ ') + (q.explanation || '');
   fb.classList.remove('hidden');
-  $('cs-continue').textContent = cs.cpIdx < cs.questions.length - 1 ? 'Next question →' : 'Finish checkpoint 🏁';
+  $('cs-continue').textContent = cs.cpIdx < cs.questions.length - 1 ? 'Next question →' : 'Finish checkpoint';
   $('cs-continue').classList.remove('hidden');
   $('cs-continue').onclick = () => {
     cs.cpIdx++;
@@ -1755,10 +1966,10 @@ function finishCheckpoint(){
     const next = done.findIndex(d => !d);  // next unfinished session (may be earlier if you skipped)
     fb.className = 'feedback good';
     fb.innerHTML = allDone
-      ? `🏆 <strong>${cs.cpCorrect}/${total} — passed!</strong> That was the last one — course complete. Amazing work!`
-      : `🎉 <strong>${cs.cpCorrect}/${total} — you passed this session!</strong>`;
+      ? `<strong>${cs.cpCorrect}/${total} — passed!</strong> That was the last one — course complete. Amazing work!`
+      : `<strong>${cs.cpCorrect}/${total} — you passed this session!</strong>`;
     fb.classList.remove('hidden');
-    $('cs-continue').textContent = allDone ? 'Back to syllabus 🏆'
+    $('cs-continue').textContent = allDone ? 'Back to syllabus'
       : `Next: session ${next+1} — ${course.sessions[next].title} →`;
     $('cs-continue').classList.remove('hidden');
     $('cs-continue').onclick = () => {
@@ -1767,9 +1978,9 @@ function finishCheckpoint(){
     };
   } else {
     fb.className = 'feedback bad';
-    fb.innerHTML = `😕 <strong>${cs.cpCorrect}/${total} — not quite yet.</strong> No stress! The tutor will explain it a different way.`;
+    fb.innerHTML = `<strong>${cs.cpCorrect}/${total} — not quite yet.</strong> No stress! The tutor will explain it a different way.`;
     fb.classList.remove('hidden');
-    $('cs-continue').textContent = '🔁 Re-teach me differently';
+    $('cs-continue').textContent = 'Re-teach me differently';
     $('cs-continue').classList.remove('hidden');
     $('cs-continue').onclick = () => openSession(cs.num, true);
   }
@@ -1828,7 +2039,7 @@ $('course-quit').onclick = () => {
 /* rebuild an expired course on the server, keeping local progress */
 async function rebuildCourse(saved){
   show('loading-panel');
-  $('loading-text').textContent = '🎓 Restoring your course…';
+  $('loading-text').textContent = 'Restoring your course…';
   const fd = new FormData();
   fd.append('topic', saved.topic || saved.title);
   fd.append('level', saved.level);
@@ -1995,113 +2206,8 @@ initGoogleSignIn();
 updateAccountBtn();
 if (authToken) pullSync().then(checkResumables);
 
-
-
-/* ---------------- drawer menu ---------------- */
-function openDrawer(){ $('drawer').classList.add('open'); $('drawer-overlay').classList.remove('hidden'); refreshBadges(); }
-function closeDrawer(){ $('drawer').classList.remove('open'); $('drawer-overlay').classList.add('hidden'); }
-$('menu-btn').onclick = openDrawer;
-$('drawer-overlay').onclick = closeDrawer;
-document.querySelectorAll('.drawer-item[data-mode]').forEach(b => b.onclick = () => { closeDrawer(); switchMode(b.dataset.mode); });
-$('drawer-theme').onclick = () => { $('theme-btn').click(); };
-$('drawer-account').onclick = () => { closeDrawer(); $('account-btn').click(); };
-
-function countUnfinished(){
-  let n = 0;
-  const q = loadQuizState();
-  if (q && q.quiz && q.idx < q.quiz.length) n++;
-  const c = loadCardsState();
-  if (c && c.deck && c.deck.length) n++;
-  libLoad('qf-courses').forEach(co => { if ((co.done||[]).filter(Boolean).length < (co.sessions||[]).length) n++; });
-  return n;
-}
-function refreshBadges(){
-  const n = countUnfinished();
-  const mb = $('menu-badge'), hb = $('hist-badge');
-  if (n > 0){ mb.textContent = n; mb.classList.remove('hidden'); hb.textContent = n; hb.classList.remove('hidden'); }
-  else { mb.classList.add('hidden'); hb.classList.add('hidden'); }
-  if ($('drawer-account')) $('drawer-account').textContent = authUser ? ('👤 ' + authUser) : '👤 Sign in';
-}
-setInterval(refreshBadges, 4000);
-refreshBadges();
-
-/* ---------------- SOLVE mode ---------------- */
-let solveLevel = 'std', solveFiles = [];
-document.querySelectorAll('#solve-levels .level').forEach(b => b.onclick = () => {
-  document.querySelectorAll('#solve-levels .level').forEach(x => x.classList.remove('active'));
-  b.classList.add('active');
-  solveLevel = b.dataset.level;
-});
-function renderSolveFiles(){
-  const isImg = n => /\.(png|jpe?g|webp|bmp)$/i.test(n);
-  $('solve-files').innerHTML = solveFiles.map((f,i) =>
-    `<span class="chip">${isImg(f.name) ? '🖼️' : '📄'} ${escH(f.name)}<button onclick="rmSolveFile(${i})">✕</button></span>`).join('');
-}
-window.rmSolveFile = i => { solveFiles.splice(i,1); renderSolveFiles(); };
-async function addSolveFiles(list){
-  for (const f of list){
-    const name = f.name && f.name !== 'image.jpg' ? f.name : `problem_${Date.now()}.jpg`;
-    solveFiles.push(await shrinkImage(new File([f], name, {type: f.type})));
-  }
-  renderSolveFiles();
-}
-$('solve-attach-btn').onclick = () => $('solve-file-input').click();
-$('solve-camera-btn').onclick = () => $('solve-camera-input').click();
-$('solve-file-input').onchange = () => { addSolveFiles($('solve-file-input').files); $('solve-file-input').value=''; };
-$('solve-camera-input').onchange = () => { addSolveFiles($('solve-camera-input').files); $('solve-camera-input').value=''; };
-
-$('solve-go').onclick = async () => {
-  const q = $('solve-q').value.trim();
-  if (!q && !solveFiles.length){
-    $('solve-error').textContent = '⚠️ Type a problem or snap a photo of it first.';
-    $('solve-error').classList.remove('hidden');
-    return;
-  }
-  $('solve-error').classList.add('hidden');
-  $('solve-go').disabled = true; $('solve-go').textContent = '🧮 Solving…';
-  $('solve-result').classList.remove('hidden');
-  $('solve-result').innerHTML = '<p><em>✍️ Working through it step by step…</em></p>';
-  try{
-    let opts;
-    if (solveFiles.length){
-      const fd = new FormData();
-      fd.append('question', q); fd.append('level', solveLevel);
-      solveFiles.forEach(f => fd.append('files', f));
-      opts = {method:'POST', body: fd};
-    } else {
-      opts = {method:'POST', headers:{'Content-Type':'application/json'},
-              body: JSON.stringify({question: q, level: solveLevel})};
-    }
-    const res = await fetch('/solve', opts);
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Something went wrong.');
-    $('solve-result').innerHTML = mdToHtml(data.reply);
-    renderMath($('solve-result'));
-    $('solve-actions').classList.remove('hidden');
-  }catch(err){
-    $('solve-result').innerHTML = '';
-    $('solve-result').classList.add('hidden');
-    $('solve-error').textContent = '⚠️ ' + (err.message === 'Failed to fetch' ? 'Network problem — try again.' : err.message);
-    $('solve-error').classList.remove('hidden');
-  }finally{
-    $('solve-go').disabled = false; $('solve-go').textContent = 'Solve it 🧮';
-  }
-};
-$('solve-copy').onclick = function(){ copyText($('solve-result').innerText, this); };
-$('solve-new').onclick = () => {
-  $('solve-q').value = ''; solveFiles = []; renderSolveFiles();
-  $('solve-result').classList.add('hidden'); $('solve-result').innerHTML = '';
-  $('solve-actions').classList.add('hidden');
-};
-
 /* check for unfinished sessions on load */
 checkResumables();
 </script>
-<footer style="margin-top:40px; text-align:center; color:var(--muted); font-size:.85rem; line-height:1.8;">
-  <div style="font-size:1.05rem;">⚡ <strong>MiPrep</strong></div>
-  <div>Designed &amp; built by <strong style="background:linear-gradient(90deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; color:transparent; font-family:Georgia,'Times New Roman',serif; font-style:italic; font-size:1.05rem;">Festus Mensah</strong></div>
-  <div>Accra, Ghana 🇬🇭 · © <span id="footer-year"></span></div>
-  <script>document.getElementById('footer-year').textContent = new Date().getFullYear();</script>
-</footer>
 </body>
 </html>

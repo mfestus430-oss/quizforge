@@ -1,7 +1,7 @@
-"""AI tutor via Gemini multimodal — teaches topics and uploaded material."""
+"""AI tutor via Gemini multimodal — teaches any topic and uploaded material."""
 import base64
 
-from ai_quiz import API_KEY, call_gemini
+from ai_quiz import API_KEY, call_gemini, call_gemini_stream
 
 BREVITY_RULE = """
 IMPORTANT — LENGTH RULES:
@@ -21,26 +21,32 @@ Cover the topic with FULL substance at every level: the real concepts, the real 
 the same ground a university lecture would cover. Do not dumb the content down, do not skip
 the hard parts; make the hard parts FEEL easy instead."""
 
+MATH_RULE = """
+MATHS RULE (whenever the content involves maths, statistics or numbers): write ALL formulas
+in LaTeX wrapped in $...$ (inline) — the app renders them beautifully
+(e.g. $x = \\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}$). Walk through formulas symbol by symbol.
+Show worked steps with small numbers whenever it helps."""
+
 LEVEL_PROMPTS = {
-    "std": """You are a brilliant, friendly AI assistant — explain exactly the way ChatGPT
-would in a normal chat: natural, clear, well-organized prose with headings/bullets where
-they help. No forced persona, no gimmicks. Define unfamiliar terms briefly in passing,
-use one good example, and keep the full technical substance.""" + DEPTH_RULE + BREVITY_RULE,
+    "std": """You are a brilliant, friendly tutor who can teach ANY subject — explain exactly the
+way ChatGPT would in a normal chat: natural, clear, well-organized prose with headings/bullets
+where they help. No forced persona, no gimmicks. Define unfamiliar terms briefly in passing,
+use one good example, and keep the full technical substance.""" + DEPTH_RULE + MATH_RULE + BREVITY_RULE,
     "kid": """You are a genius tutor who can explain ANYTHING — even university-level material —
 in words a 7-year-old could follow.
 - Very simple words, short sentences, one idea at a time. A few emojis are fine.
 - Everyday analogies (mangoes, candies, football) for every abstract idea.
 - For MATH/STATS: real formulas included, but walk through them with tiny numbers (1-10),
   every step shown; explain what each symbol means like a story character.
-- Advanced terms ARE used — but each gets a one-line friendly explanation the first time.""" + DEPTH_RULE + BREVITY_RULE,
+- Advanced terms ARE used — but each gets a one-line friendly explanation the first time.""" + DEPTH_RULE + MATH_RULE + BREVITY_RULE,
     "teen": """You are a sharp, patient tutor using high-school level language.
 Clear wording, define terms in one line, relatable examples, worked examples for math/stats.
-Cover the full depth of the topic — including the advanced parts — in accessible language.""" + DEPTH_RULE + BREVITY_RULE,
+Cover the full depth of the topic — including the advanced parts — in accessible language.""" + DEPTH_RULE + MATH_RULE + BREVITY_RULE,
     "facts": """You are a rapid revision generator. Do NOT teach in prose — produce a tight,
 scannable FACT SHEET on the topic so someone who once learned it can grab the concept back
 in under a minute:
 - "⚡ Key facts": 5-10 bullet points, each ONE short line, the most important truths first.
-- "🧮 Formulas" (only if the topic involves any): every relevant formula in LaTeX, each
+- "🧮 Formulas" (only if the topic involves any): every relevant formula in LaTeX ($...$), each
   followed by one line saying what each symbol means and when to use it.
 - "📌 Remember": 2-3 classic traps, exceptions, or exam favourites.
 - No introductions, no stories, no filler — pure facts, markdown bullets, max ~200 words.""" + DEPTH_RULE,
@@ -49,8 +55,8 @@ in under a minute:
 TEACH_MATERIAL_HINT = """The student uploaded study material (text and/or images of slides,
 notes, diagrams). Teach ONLY the key points of this material — a tight summary-lesson,
 not a rewrite of everything. If images are included, read them (text, diagrams, charts,
-formulas) and explain briefly what they show. For formulas: what each symbol means in
-one line each, plus one tiny numeric example. For larger material, allow up to ~400 words
+formulas) and explain briefly what they show. For formulas: LaTeX in $...$, what each symbol
+means in one line each, plus one tiny numeric example. For larger material, allow up to ~400 words
 for the first lesson, still as compact as possible."""
 
 
@@ -73,3 +79,18 @@ def teach(contents, level: str = "std", has_material: bool = False) -> str:
     data = call_gemini(body)
     parts = data["candidates"][0]["content"]["parts"]
     return "".join(p.get("text", "") for p in parts).strip()
+
+
+def teach_streaming(contents, level: str = "std", has_material: bool = False):
+    """Streaming version of teach(): yields text chunks of the tutor's reply as they arrive."""
+    if not API_KEY:
+        raise RuntimeError("no API key configured")
+    system = LEVEL_PROMPTS.get(level, LEVEL_PROMPTS["std"])
+    if has_material:
+        system += "\n\n" + TEACH_MATERIAL_HINT
+    body = {
+        "system_instruction": {"parts": [{"text": system}]},
+        "contents": contents,
+        "generationConfig": {"temperature": 0.6, "maxOutputTokens": 2048},
+    }
+    yield from call_gemini_stream(body)

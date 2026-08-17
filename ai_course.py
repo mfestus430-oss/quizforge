@@ -61,7 +61,9 @@ Teaching style: {style}
 {reteach}
 
 Teach THIS SESSION ONLY, step by step: 3-6 small numbered steps, each step one small idea
-with a tiny example. Maximum ~300 words total. Use markdown headings/bullets. Do not
+with a tiny example. When the content involves maths or statistics, write formulas in LaTeX
+wrapped in $...$ (the app renders them) and show the steps of any worked example.
+Maximum ~300 words total. Use markdown headings/bullets. Do not
 preview future sessions. Base the teaching on the study material if provided; otherwise
 on solid general knowledge of the subject.
 

@@ -54,6 +54,9 @@ Difficulty guide:
 Rules:
 - Every question must be answerable from the material alone.
 - Multiple-choice questions: exactly 4 options, only one correct, distractors plausible.
+- When the material involves maths or statistics, prioritise definitions, formulas,
+  calculations and interpretation questions, and write notation in LaTeX wrapped in $...$
+  (e.g. $x^2$, $\\bar{x}$, $\\sigma$) — the app renders it. Numeric options must look plausible.
 - Vary question styles. Do not repeat topics already covered in this list of
   existing questions (write about DIFFERENT facts/aspects): {avoid}
 - Include a ONE short sentence explanation of the correct answer (max 20 words).
@@ -76,17 +79,36 @@ SHORT_RULE_ON = ('About 1 in 4 questions should be typed short-answer questions 
 SHORT_RULE_OFF = 'All questions must be multiple-choice (type "mcq").'
 
 
+def _gemini_url(model, stream=False):
+    base = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:"
+    return base + ("streamGenerateContent?alt=sse" if stream else "generateContent")
+
+
+_rotate_lock = __import__("threading").Lock()
+RETRY_5XX_DELAYS = (1, 2)   # short backoffs only — never make the user wait 30s
+
+
+def _rotate():
+    global _model_idx
+    with _rotate_lock:
+        _model_idx = (_model_idx + 1) % len(MODELS)
+
+
 def call_gemini(body):
-    """POST a raw Gemini request body; rotates models on 429s. Returns parsed JSON response."""
+    """POST a raw Gemini request body; rotates models on 429s. Returns parsed JSON response.
+
+    Speed-tuned: on quota errors (429) it tries each model ONCE then fails fast so the
+    caller can fall back; on 5xx it retries twice with 1-2s backoff max — no long sleeps.
+    """
     global _model_idx
     payload = json.dumps(body).encode()
-    last_err = None
-    tried = 0
+    tried_models = set()
     attempt = 0
-    while tried < len(MODELS) * 2:
-        model = MODELS[_model_idx % len(MODELS)]
+    while True:
+        with _rotate_lock:
+            model = MODELS[_model_idx % len(MODELS)]
         req = urllib.request.Request(
-            _url(model), data=payload,
+            _gemini_url(model), data=payload,
             headers={"Content-Type": "application/json", "x-goog-api-key": API_KEY},
             method="POST",
         )
@@ -94,24 +116,75 @@ def call_gemini(body):
             with urllib.request.urlopen(req, timeout=90) as resp:
                 return json.loads(resp.read().decode())
         except urllib.error.HTTPError as e:
-            last_err = e
             if e.code == 429:
-                # this model's quota is done — rotate to the next model
-                _model_idx = (_model_idx + 1) % len(MODELS)
-                tried += 1
+                tried_models.add(model)
+                _rotate()
+                if len(tried_models) >= len(MODELS):
+                    raise  # every model is out of quota — fail fast, caller falls back
                 continue
-            if e.code >= 500 and attempt < MAX_RETRIES:
+            if e.code >= 500 and attempt < len(RETRY_5XX_DELAYS):
+                time.sleep(RETRY_5XX_DELAYS[attempt])
                 attempt += 1
-                time.sleep(min(5 * (2 ** attempt), 30))
                 continue
             raise
-        except (TimeoutError, urllib.error.URLError, OSError) as e:
-            # network timeout / hang — try the next model
-            last_err = e
-            _model_idx = (_model_idx + 1) % len(MODELS)
-            tried += 1
+        except (TimeoutError, urllib.error.URLError, OSError):
+            tried_models.add(model)
+            _rotate()
+            if len(tried_models) >= len(MODELS):
+                raise
             continue
-    raise last_err
+
+
+def call_gemini_stream(body):
+    """POST a streaming Gemini request; yields text chunks as they arrive."""
+    global _model_idx
+    payload = json.dumps(body).encode()
+    tried_models = set()
+    attempt = 0
+    while True:
+        with _rotate_lock:
+            model = MODELS[_model_idx % len(MODELS)]
+        req = urllib.request.Request(
+            _gemini_url(model, stream=True), data=payload,
+            headers={"Content-Type": "application/json", "x-goog-api-key": API_KEY},
+            method="POST",
+        )
+        try:
+            resp = urllib.request.urlopen(req, timeout=90)
+            break
+        except urllib.error.HTTPError as e:
+            if e.code == 429:
+                tried_models.add(model)
+                _rotate()
+                if len(tried_models) >= len(MODELS):
+                    raise
+                continue
+            if e.code >= 500 and attempt < len(RETRY_5XX_DELAYS):
+                time.sleep(RETRY_5XX_DELAYS[attempt])
+                attempt += 1
+                continue
+            raise
+        except (TimeoutError, urllib.error.URLError, OSError):
+            tried_models.add(model)
+            _rotate()
+            if len(tried_models) >= len(MODELS):
+                raise
+            continue
+    try:
+        for raw in resp:
+            line = raw.decode("utf-8").strip()
+            if not line.startswith("data:"):
+                continue
+            try:
+                data = json.loads(line[5:])
+                for part in data["candidates"][0]["content"]["parts"]:
+                    t = part.get("text")
+                    if t:
+                        yield t
+            except (KeyError, IndexError, ValueError):
+                continue
+    finally:
+        resp.close()
 
 
 def _call_json(prompt_text, max_tokens=8192, temperature=0.8):
@@ -184,9 +257,10 @@ def material_chunks(text, max_chunks=24):
     return chunks
 
 
-def ai_generate_quiz(text, num_questions=10, difficulty="medium", include_short=False):
+def ai_generate_quiz(text, num_questions=10, difficulty="medium", include_short=False, progress_cb=None):
     """Generate up to num_questions; large counts/materials are batched in parallel
-    across chunks of the material so big books are fully covered."""
+    across chunks of the material so big books are fully covered.
+    progress_cb(done, total) is called (from worker threads) as questions arrive."""
     if not API_KEY:
         raise RuntimeError("no API key configured")
 
@@ -199,6 +273,11 @@ def ai_generate_quiz(text, num_questions=10, difficulty="medium", include_short=
             if key and key not in seen:
                 seen.add(key)
                 questions.append(q)
+        if progress_cb:
+            try:
+                progress_cb(len(questions), num_questions)
+            except Exception:
+                pass
 
     # first batch from the first chunk (fast path for small quizzes)
     first_n = min(num_questions, BATCH_SIZE)
@@ -223,13 +302,15 @@ def ai_generate_quiz(text, num_questions=10, difficulty="medium", include_short=
     return questions[:num_questions]
 
 
-GRADE_PROMPT = """You are grading a student's typed answer to a short-answer quiz question.
+GRADE_PROMPT = """You are grading a student's typed answer to a short-answer question.
 
 Question: {question}
 Model answer: {model}
 Student's answer: {student}
 
-Judge the student's answer on meaning, not exact wording. Return ONLY JSON:
+Judge the answer on meaning, NOT exact wording. For maths, treat equivalent forms as correct
+(e.g. 0.5 = 1/2 = 50%, factored vs expanded when equal, √16 = 4); ignore missing units unless
+the question asked for them. Return ONLY JSON:
 {{"verdict":"correct" or "partial" or "wrong","feedback":"ONE short sentence (max 20 words): why, plus the missing bit if any"}}"""
 
 
@@ -248,6 +329,7 @@ def grade_short_answer(question, model_answer, student_answer):
 CARDS_PROMPT = """From the study material below, create {n} high-quality flashcards
 covering the most important facts, terms, formulas and concepts.
 Front = a clear question or term. Back = a concise answer/definition (max 2 sentences).
+Write any formulas in LaTeX wrapped in $...$ — the app renders them.
 Cover different points — no duplicates.
 Return ONLY JSON: {{"cards":[{{"front":"...","back":"..."}}]}}
 

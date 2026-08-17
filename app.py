@@ -2,20 +2,23 @@
 import io
 import json
 import os
+import queue
 import random
 import re
+import threading
 import urllib.parse
 import uuid
 from collections import Counter
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, Response, jsonify, render_template, request, send_file
 
 from ai_quiz import ai_generate_quiz, grade_short_answer, ai_flashcards
 from ai_course import make_syllabus, teach_session, ask_course
 import db
 
 db.init()
-from ai_teach import teach, make_image_part
+from ai_teach import teach, make_image_part, teach_streaming
+import offline
 
 app = Flask(__name__)
 app.config["MAX_CONTENT_LENGTH"] = 32 * 1024 * 1024  # 32 MB
@@ -295,24 +298,50 @@ def upload():
 
     include_short = request.form.get("include_short") == "1"
 
-    engine = "ai"
-    try:
-        quiz = ai_generate_quiz(text, num_q, difficulty, include_short)
-    except Exception as e:
-        app.logger.warning("AI generation failed (%s); using built-in engine", e)
-        engine = "basic"
-        quiz = generate_quiz(text, num_q)
+    # NDJSON stream: {"progress":n,"total":m} lines while generating, then the quiz
+    def generate():
+        eng = "ai"
+        evq = queue.Queue()
 
-    # top up with the basic engine if AI couldn't reach the requested count
-    if engine == "ai" and len(quiz) < num_q:
-        extra = generate_quiz(text, num_q - len(quiz))
-        seen = {q["question"][:60].lower() for q in quiz}
-        quiz += [q for q in extra if q["question"][:60].lower() not in seen]
+        def run():
+            try:
+                quiz_ = ai_generate_quiz(text, num_q, difficulty, include_short,
+                                         progress_cb=lambda d, t: evq.put(("p", d, t)))
+                evq.put(("ok", quiz_))
+            except Exception as e:
+                app.logger.warning("AI generation failed (%s); using built-in engine", e)
+                evq.put(("fail", e))
 
-    if len(quiz) < 3:
-        return jsonify({"error": "Couldn't generate enough questions from this content. Try a file with more text."}), 400
-    return jsonify({"quiz": quiz, "source": ", ".join(names),
-                    "words": len(text.split()), "engine": engine})
+        threading.Thread(target=run, daemon=True).start()
+        quiz_out = None
+        while True:
+            ev = evq.get()
+            if ev[0] == "p":
+                yield json.dumps({"progress": ev[1], "total": ev[2]}) + "\n"
+            elif ev[0] == "ok":
+                quiz_out = ev[1]
+                break
+            else:
+                eng = "basic"
+                quiz_out = generate_quiz(text, num_q)
+                break
+
+        # top up with the basic engine if AI couldn't reach the requested count
+        if eng == "ai" and len(quiz_out) < num_q:
+            extra = generate_quiz(text, num_q - len(quiz_out))
+            seen = {q["question"][:60].lower() for q in quiz_out}
+            quiz_out += [q for q in extra if q["question"][:60].lower() not in seen]
+
+        if len(quiz_out) < 3:
+            yield json.dumps({"error": "Couldn't generate enough questions from this content. Try a file with more text."}) + "\n"
+            return
+        yield json.dumps({"quiz": quiz_out, "source": ", ".join(names),
+                          "words": len(text.split()), "engine": eng}) + "\n"
+
+    resp = Response(generate(), mimetype="application/x-ndjson")
+    resp.headers["Cache-Control"] = "no-cache"
+    resp.headers["X-Accel-Buffering"] = "no"
+    return resp
 
 
 @app.route("/grade", methods=["POST"])
@@ -359,7 +388,14 @@ def flashcards():
         cards = ai_flashcards(text, count)
     except Exception as e:
         app.logger.warning("flashcards failed: %s", e)
-        return jsonify({"error": "The AI is unavailable right now — try again shortly."}), 502
+        # offline fallback: definition / key-term / fill-in-the-blank cards
+        try:
+            cards = offline.build_flashcards(text, count)
+        except Exception as ee:
+            app.logger.warning("offline flashcards failed: %s", ee)
+            cards = []
+        if len(cards) < 3:
+            return jsonify({"error": "The AI is unavailable right now — try again shortly."}), 502
     return jsonify({"cards": cards})
 
 
@@ -403,7 +439,14 @@ def course_start():
         syllabus = make_syllabus(material, topic, level)
     except Exception as e:
         app.logger.warning("syllabus failed: %s", e)
-        return jsonify({"error": "The AI couldn't build a course right now — try again shortly."}), 502
+        if len(material.split()) >= 40:
+            try:
+                syllabus = offline.build_syllabus(material, topic)
+            except Exception:
+                return jsonify({"error": "Couldn't build a course from this material — try again shortly."}), 502
+        else:
+            return jsonify({"error": "The AI couldn't build a course right now (quota or connection). "
+                                     "Upload a book/slides to get an offline course instead."}), 502
 
     cid = uuid.uuid4().hex
     db.save_obj("course", cid, {"material": material, "title": syllabus["course_title"],
@@ -429,7 +472,13 @@ def course_session():
                                 reteach=bool(data.get("reteach")))
     except Exception as e:
         app.logger.warning("teach_session failed: %s", e)
-        return jsonify({"error": "The AI tutor is unavailable right now — try again shortly."}), 502
+        # offline fallback: notes + questions from this session's part of the material
+        try:
+            payload = offline.build_session_lesson(c["material"], num + 1, sess["title"])
+        except Exception:
+            payload = None
+        if not payload or not payload.get("lesson") or not payload.get("questions"):
+            return jsonify({"error": "The AI tutor is unavailable right now — try again shortly."}), 502
     return jsonify(payload)
 
 
@@ -475,7 +524,11 @@ def course_ask():
                            level, extra_parts)
     except Exception as e:
         app.logger.warning("course_ask failed: %s", e)
-        return jsonify({"error": "The AI tutor is unavailable right now — try again shortly."}), 502
+        # offline fallback: keyword search through the course material + this session's lesson
+        reply = offline.answer_from_material(
+            (c.get("material") or "") + "\n" + (data.get("lesson") or ""), question)
+        if not reply:
+            return jsonify({"error": "The AI tutor is unavailable right now — try again shortly."}), 502
     return jsonify({"reply": reply})
 
 
@@ -534,6 +587,84 @@ def teach_start():
     return jsonify({"session": sid, "reply": reply})
 
 
+@app.route("/teach/stream", methods=["POST"])
+def teach_start_stream():
+    """Streaming version of /teach — the lesson arrives word by word.
+    Plain-text chunks; the final line starts with \\x01 and carries JSON meta (session id)."""
+    level = request.form.get("level", "std")
+    topic = (request.form.get("topic") or "").strip()
+    files = [f for f in request.files.getlist("files") if f.filename]
+
+    if not topic and not files:
+        return jsonify({"error": "Type a topic or upload some material to be taught from."}), 400
+
+    parts = []
+    has_material = bool(files)
+    doc_texts = []          # text extracted from documents — powers the offline fallback
+    for f in files:
+        ext = os.path.splitext(f.filename)[1].lower()
+        data = f.read()
+        if ext in IMAGE_MIMES:
+            if len(data) > 8 * 1024 * 1024:
+                return jsonify({"error": f"{f.filename} is too large (max 8 MB per image)."}), 400
+            parts.append(make_image_part(data, IMAGE_MIMES[ext]))
+        elif ext in EXTRACTORS:
+            try:
+                txt = EXTRACTORS[ext](data)
+            except Exception as e:
+                return jsonify({"error": f"Could not read {f.filename}: {e}"}), 400
+            doc_texts.append(txt)
+            parts.append({"text": f"--- Content of {f.filename} ---\n{txt[:20000]}"})
+        else:
+            return jsonify({"error": f"Unsupported file type: {ext}"}), 400
+
+    if topic:
+        parts.append({"text": f"Please teach me this topic from scratch: {topic}"})
+    else:
+        parts.append({"text": "Please teach me the material I uploaded, from scratch."})
+
+    contents = [{"role": "user", "parts": parts}]
+    sid = uuid.uuid4().hex
+    doc_text = "\n".join(doc_texts)
+
+    def generate():
+        buf = []
+        try:
+            for chunk in teach_streaming(contents, level, has_material):
+                buf.append(chunk)
+                yield chunk
+        except Exception as e:
+            app.logger.warning("teach stream failed: %s", e)
+            # offline fallback: study notes from the uploaded documents
+            if not buf and len(doc_text.split()) >= 40:
+                try:
+                    notes = offline.build_notes(doc_text, topic)
+                except Exception:
+                    notes = ""
+                if notes:
+                    for para in notes.split("\n\n"):
+                        para += "\n\n"
+                        buf.append(para)
+                        yield para
+            if not buf:
+                if "no API key" in str(e):
+                    yield "\x02No AI key is configured on THIS server — on your deployed MiPrep site it works automatically. (Set GEMINI_API_KEY to enable it here.)"
+                else:
+                    yield ("\x02The AI tutor is unavailable right now (quota or connection). "
+                           "Tip: upload a document (PDF/DOCX/TXT) and try again — MiPrep builds "
+                           "offline study notes from documents.")
+                return
+            yield "\n\n_(the tutor was interrupted — use the Ask box below to continue)_"
+        contents.append({"role": "model", "parts": [{"text": "".join(buf)}]})
+        db.save_obj("session", sid, {"contents": contents, "has_material": has_material, "level": level})
+        yield "\n\x01" + json.dumps({"session": sid})
+
+    resp = Response(generate(), mimetype="text/plain; charset=utf-8")
+    resp.headers["Cache-Control"] = "no-cache"
+    resp.headers["X-Accel-Buffering"] = "no"
+    return resp
+
+
 @app.route("/teach/followup", methods=["POST"])
 def teach_followup():
     # accepts JSON (text-only) OR multipart form-data (text + attached files)
@@ -582,7 +713,12 @@ def teach_followup():
     except Exception as e:
         sess["contents"].pop()
         app.logger.warning("followup failed: %s", e)
-        return jsonify({"error": "The AI tutor is unavailable right now. Try again in a moment."}), 502
+        # offline fallback: keyword search through everything in this lesson
+        corpus = " ".join(p.get("text", "") for m in sess["contents"]
+                          for p in m.get("parts", []) if isinstance(p, dict))
+        reply = offline.answer_from_material(corpus, question)
+        if not reply:
+            return jsonify({"error": "The AI tutor is unavailable right now. Try again in a moment."}), 502
     sess["contents"].append({"role": "model", "parts": [{"text": reply}]})
     db.save_obj("session", sid, sess)   # persist the updated conversation
     return jsonify({"reply": reply})
@@ -659,6 +795,26 @@ def sync():
         db.save_sync(user, payload)
         return jsonify({"ok": True})
     return jsonify(db.load_sync(user))
+
+
+@app.route("/manifest.webmanifest")
+def manifest_route():
+    m = {
+        "name": "MiPrep — AI Study Tutor", "short_name": "MiPrep",
+        "description": "Your AI tutor for any subject — quizzes, lessons, courses & flashcards.",
+        "start_url": "/", "scope": "/", "display": "standalone", "orientation": "portrait",
+        "background_color": "#0f1220", "theme_color": "#7c5cff",
+        "icons": [
+            {"src": "/icon512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+            {"src": "/icon512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"},
+        ],
+    }
+    return Response(json.dumps(m), mimetype="application/manifest+json")
+
+
+@app.route("/icon512.png")
+def icon_route():
+    return send_file(os.path.join(os.path.dirname(__file__), "icon512.png"), mimetype="image/png")
 
 
 if __name__ == "__main__":
