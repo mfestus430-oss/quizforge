@@ -64,33 +64,56 @@ def make_image_part(data: bytes, mime: str):
     return {"inline_data": {"mime_type": mime, "data": base64.b64encode(data).decode()}}
 
 
-def teach(contents, level: str = "std", has_material: bool = False) -> str:
-    """contents = full Gemini-format conversation. Returns the tutor's reply."""
-    if not API_KEY:
-        raise RuntimeError("no API key configured")
+import providers
+
+
+def _system_for(level, has_material):
     system = LEVEL_PROMPTS.get(level, LEVEL_PROMPTS["std"])
     if has_material:
         system += "\n\n" + TEACH_MATERIAL_HINT
-    body = {
-        "system_instruction": {"parts": [{"text": system}]},
-        "contents": contents,
-        "generationConfig": {"temperature": 0.6, "maxOutputTokens": 2048},
-    }
-    data = call_gemini(body)
-    parts = data["candidates"][0]["content"]["parts"]
-    return "".join(p.get("text", "") for p in parts).strip()
+    return system
+
+
+def _require_some_ai():
+    if not API_KEY and not providers.available():
+        raise RuntimeError("no API key configured")
+
+
+def teach(contents, level: str = "std", has_material: bool = False) -> str:
+    """contents = full Gemini-format conversation. Returns the tutor's reply."""
+    _require_some_ai()
+    system = _system_for(level, has_material)
+    if API_KEY:
+        try:
+            body = {
+                "system_instruction": {"parts": [{"text": system}]},
+                "contents": contents,
+                "generationConfig": {"temperature": 0.6, "maxOutputTokens": 2048},
+            }
+            data = call_gemini(body)
+            parts = data["candidates"][0]["content"]["parts"]
+            return "".join(p.get("text", "") for p in parts).strip()
+        except Exception:
+            pass  # Gemini out of quota — re-route below
+    return providers.fallback_generate(system, contents).strip()
 
 
 def teach_streaming(contents, level: str = "std", has_material: bool = False):
     """Streaming version of teach(): yields text chunks of the tutor's reply as they arrive."""
-    if not API_KEY:
-        raise RuntimeError("no API key configured")
-    system = LEVEL_PROMPTS.get(level, LEVEL_PROMPTS["std"])
-    if has_material:
-        system += "\n\n" + TEACH_MATERIAL_HINT
-    body = {
-        "system_instruction": {"parts": [{"text": system}]},
-        "contents": contents,
-        "generationConfig": {"temperature": 0.6, "maxOutputTokens": 2048},
-    }
-    yield from call_gemini_stream(body)
+    _require_some_ai()
+    system = _system_for(level, has_material)
+    if API_KEY:
+        body = {
+            "system_instruction": {"parts": [{"text": system}]},
+            "contents": contents,
+            "generationConfig": {"temperature": 0.6, "maxOutputTokens": 2048},
+        }
+        try:
+            yield from call_gemini_stream(body)
+            return
+        except Exception:
+            pass  # Gemini stream failed — fall back to a full generation, chunked
+    text = providers.fallback_generate(system, contents).strip()
+    words = text.split(" ")
+    for i in range(0, len(words), 8):        # deliver in chunks to keep the typing feel
+        yield " ".join(words[i:i + 8]) + " "

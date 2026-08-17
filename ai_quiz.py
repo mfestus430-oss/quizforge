@@ -8,17 +8,29 @@ import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
-def _load_key():
-    key = os.environ.get("GEMINI_API_KEY", "").strip()
-    if key:
-        return key
-    key_file = os.path.join(os.path.dirname(__file__), "gemini_key.txt")
-    if os.path.exists(key_file):
-        with open(key_file) as f:
-            return f.read().strip()
-    return ""
+def _load_keys():
+    """ALL Gemini keys: GEMINI_API_KEY plus any GEMINI_API_KEY_2, _3, _4...
+    Each key has its own daily quota — rotating them multiplies the free tier."""
+    keys = []
+    main = os.environ.get("GEMINI_API_KEY", "").strip()
+    if main:
+        keys.append(main)
+    for i in range(2, 9):
+        k = os.environ.get(f"GEMINI_API_KEY_{i}", "").strip()
+        if k and k not in keys:
+            keys.append(k)
+    if not keys:
+        key_file = os.path.join(os.path.dirname(__file__), "gemini_key.txt")
+        if os.path.exists(key_file):
+            with open(key_file) as f:
+                k = f.read().strip()
+                if k:
+                    keys.append(k)
+    return keys
 
-API_KEY = _load_key()
+
+API_KEYS = _load_keys()
+API_KEY = API_KEYS[0] if API_KEYS else ""   # backwards compat
 
 # Free-tier daily quotas are PER MODEL — if one model is exhausted (429),
 # we rotate to the next. All of these are strong multimodal Gemini models.
@@ -28,7 +40,6 @@ MODELS = [
     "gemini-3.6-flash",           # stronger, ~10s
     "gemini-3.5-flash",           # stronger, may be quota-limited
 ]
-_model_idx = 0  # index of the model currently believed to have quota
 
 MODEL = MODELS[0]  # for backwards compat (ai_teach imports MODEL)
 
@@ -53,6 +64,9 @@ Difficulty guide:
 
 Rules:
 - Every question must be answerable from the material alone.
+- Aim for HIGHER-ORDER THINKING: application, analysis, comparison, cause-effect and
+  multi-step reasoning — not just plain recall. Mix a few easy warm-ups with genuinely
+  challenging questions that make students THINK.
 - Multiple-choice questions: exactly 4 options, only one correct, distractors plausible.
 - When the material involves maths or statistics, prioritise definitions, formulas,
   calculations and interpretation questions, and write notation in LaTeX wrapped in $...$
@@ -84,107 +98,131 @@ def _gemini_url(model, stream=False):
     return base + ("streamGenerateContent?alt=sse" if stream else "generateContent")
 
 
-_rotate_lock = __import__("threading").Lock()
 RETRY_5XX_DELAYS = (1, 2)   # short backoffs only — never make the user wait 30s
 
 
-def _rotate():
-    global _model_idx
-    with _rotate_lock:
-        _model_idx = (_model_idx + 1) % len(MODELS)
+# ---- quota self-healing: combos that hit the DAILY limit are skipped for hours,
+# then automatically re-tested when the cooldown expires ----
+_dead = {}                                  # (key_idx, model_idx) -> expiry timestamp
+DEAD_COOLDOWN = 6 * 3600                    # hours; roughly one quota reset cycle
+
+
+def _mark_dead(ki, mi):
+    _dead[(ki, mi)] = time.time() + DEAD_COOLDOWN
+
+
+def _alive(ki, mi):
+    return _dead.get((ki, mi), 0) < time.time()
+
+
+def _all_combos():
+    return [(ki, mi) for ki in range(len(API_KEYS)) for mi in range(len(MODELS))
+            if _alive(ki, mi)]
+
+
+def _headers(ki):
+    return {"Content-Type": "application/json", "x-goog-api-key": API_KEYS[ki]}
+
+
+def _retry_delay(e):
+    """Google's suggested retry delay (seconds) from a 429 body, if present.
+
+    Per-MINUTE rate limits return a short delay (worth waiting for);
+    daily quota exhaustion returns none (not worth waiting for)."""
+    try:
+        info = json.loads(e.read().decode())
+        for d in info.get("error", {}).get("details", []):
+            rd = str(d.get("retryDelay", ""))
+            if rd.endswith("s"):
+                return float(rd[:-1])
+    except Exception:
+        pass
+    return None
 
 
 def call_gemini(body):
-    """POST a raw Gemini request body; rotates models on 429s. Returns parsed JSON response.
-
-    Speed-tuned: on quota errors (429) it tries each model ONCE then fails fast so the
-    caller can fall back; on 5xx it retries twice with 1-2s backoff max — no long sleeps.
-    """
-    global _model_idx
+    """POST a raw Gemini request. Sweeps every alive KEY x MODEL combo:
+    waits out short per-minute limits, marks daily-quota combos dead for hours
+    (self-heals when the cooldown expires), then fails fast to fallbacks."""
     payload = json.dumps(body).encode()
-    tried_models = set()
-    attempt = 0
-    while True:
-        with _rotate_lock:
-            model = MODELS[_model_idx % len(MODELS)]
-        req = urllib.request.Request(
-            _gemini_url(model), data=payload,
-            headers={"Content-Type": "application/json", "x-goog-api-key": API_KEY},
-            method="POST",
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=90) as resp:
-                return json.loads(resp.read().decode())
-        except urllib.error.HTTPError as e:
-            if e.code == 429:
-                tried_models.add(model)
-                _rotate()
-                if len(tried_models) >= len(MODELS):
-                    raise  # every model is out of quota — fail fast, caller falls back
-                continue
-            if e.code >= 500 and attempt < len(RETRY_5XX_DELAYS):
-                time.sleep(RETRY_5XX_DELAYS[attempt])
-                attempt += 1
-                continue
-            raise
-        except (TimeoutError, urllib.error.URLError, OSError):
-            tried_models.add(model)
-            _rotate()
-            if len(tried_models) >= len(MODELS):
+    combos = _all_combos()
+    if not combos:
+        raise RuntimeError("all Gemini quota is cooling down")
+    short_waits = 0
+    last_err = None
+    for ki, mi in combos:
+        for attempt in range(3):
+            req = urllib.request.Request(_gemini_url(MODELS[mi]), data=payload,
+                                         headers=_headers(ki), method="POST")
+            try:
+                with urllib.request.urlopen(req, timeout=90) as resp:
+                    return json.loads(resp.read().decode())
+            except urllib.error.HTTPError as e:
+                last_err = e
+                if e.code == 429:
+                    wait = _retry_delay(e)
+                    if wait and wait <= 45 and short_waits < 2:
+                        short_waits += 1
+                        time.sleep(wait + 1)
+                        continue              # per-minute limit — worth the wait
+                    _mark_dead(ki, mi)        # daily quota — cool this combo down
+                    break
+                if e.code >= 500 and attempt < 2:
+                    time.sleep(RETRY_5XX_DELAYS[min(attempt, len(RETRY_5XX_DELAYS) - 1)])
+                    continue
                 raise
-            continue
+            except (TimeoutError, urllib.error.URLError, OSError) as e:
+                last_err = e
+                break                         # network issue — next combo
+    if last_err:
+        raise last_err
+    raise RuntimeError("Gemini unavailable")
 
 
 def call_gemini_stream(body):
-    """POST a streaming Gemini request; yields text chunks as they arrive."""
-    global _model_idx
+    """Streaming variant: same key x model sweep, yields text chunks as they arrive."""
     payload = json.dumps(body).encode()
-    tried_models = set()
-    attempt = 0
-    while True:
-        with _rotate_lock:
-            model = MODELS[_model_idx % len(MODELS)]
-        req = urllib.request.Request(
-            _gemini_url(model, stream=True), data=payload,
-            headers={"Content-Type": "application/json", "x-goog-api-key": API_KEY},
-            method="POST",
-        )
-        try:
-            resp = urllib.request.urlopen(req, timeout=90)
-            break
-        except urllib.error.HTTPError as e:
-            if e.code == 429:
-                tried_models.add(model)
-                _rotate()
-                if len(tried_models) >= len(MODELS):
-                    raise
-                continue
-            if e.code >= 500 and attempt < len(RETRY_5XX_DELAYS):
-                time.sleep(RETRY_5XX_DELAYS[attempt])
-                attempt += 1
-                continue
-            raise
-        except (TimeoutError, urllib.error.URLError, OSError):
-            tried_models.add(model)
-            _rotate()
-            if len(tried_models) >= len(MODELS):
-                raise
-            continue
-    try:
-        for raw in resp:
-            line = raw.decode("utf-8").strip()
-            if not line.startswith("data:"):
-                continue
+    combos = _all_combos()
+    if not combos:
+        raise RuntimeError("all Gemini quota is cooling down")
+    short_waits = 0
+    for ki, mi in combos:
+        for attempt in range(3):
+            req = urllib.request.Request(_gemini_url(MODELS[mi], stream=True), data=payload,
+                                         headers=_headers(ki), method="POST")
             try:
-                data = json.loads(line[5:])
-                for part in data["candidates"][0]["content"]["parts"]:
-                    t = part.get("text")
-                    if t:
-                        yield t
-            except (KeyError, IndexError, ValueError):
-                continue
-    finally:
-        resp.close()
+                resp = urllib.request.urlopen(req, timeout=90)
+            except urllib.error.HTTPError as e:
+                if e.code == 429:
+                    wait = _retry_delay(e)
+                    if wait and wait <= 45 and short_waits < 2:
+                        short_waits += 1
+                        time.sleep(wait + 1)
+                        continue
+                    _mark_dead(ki, mi)
+                    break
+                if e.code >= 500 and attempt < 2:
+                    time.sleep(RETRY_5XX_DELAYS[min(attempt, len(RETRY_5XX_DELAYS) - 1)])
+                    continue
+                raise
+            except (TimeoutError, urllib.error.URLError, OSError):
+                break
+            try:
+                for raw in resp:
+                    line = raw.decode("utf-8").strip()
+                    if not line.startswith("data:"):
+                        continue
+                    try:
+                        data = json.loads(line[5:])
+                        for part in data["candidates"][0]["content"]["parts"]:
+                            t = part.get("text")
+                            if t:
+                                yield t
+                    except (KeyError, IndexError, ValueError):
+                        continue
+            finally:
+                resp.close()
+            return
 
 
 def _call_json(prompt_text, max_tokens=8192, temperature=0.8):
@@ -196,8 +234,19 @@ def _call_json(prompt_text, max_tokens=8192, temperature=0.8):
             "responseMimeType": "application/json",
         },
     }
-    data = call_gemini(body)
-    raw = data["candidates"][0]["content"]["parts"][0]["text"]
+    import providers
+    raw = None
+    if API_KEY:
+        try:
+            data = call_gemini(body)
+            raw = data["candidates"][0]["content"]["parts"][0]["text"]
+        except Exception:
+            raw = None
+    if raw is None:
+        # Gemini is out (quota/5xx) — re-route to Groq / OpenRouter (separate quotas)
+        raw = providers.fallback_generate(
+            None, [{"role": "user", "parts": [{"text": prompt_text}]}],
+            max_tokens=max_tokens, temperature=temperature, json_mode=True)
     raw = re.sub(r"^```(?:json)?|```$", "", raw.strip(), flags=re.M).strip()
     return json.loads(raw)
 

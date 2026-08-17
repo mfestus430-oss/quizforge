@@ -121,10 +121,18 @@ def ask_course(material, title, lesson, question, level, extra_parts=None):
         title=title, question=question[:600], lesson=lesson[:6000],
         style=LEVEL_STYLE.get(level, LEVEL_STYLE["std"]),
         material_block=("STUDY MATERIAL:\n" + spread_material(material, 15000)) if material else "")})
-    body = {
-        "contents": [{"parts": parts}],
-        "generationConfig": {"temperature": 0.6, "maxOutputTokens": 2048},
-    }
-    data = call_gemini(body)
-    parts = data["candidates"][0]["content"]["parts"]
-    return "".join(p.get("text", "") for p in parts).strip()
+    import providers
+    if not API_KEY and not providers.available():
+        raise RuntimeError("no API key configured")
+    if API_KEY:
+        try:
+            body = {
+                "contents": [{"parts": parts}],
+                "generationConfig": {"temperature": 0.6, "maxOutputTokens": 2048},
+            }
+            data = call_gemini(body)
+            rp = data["candidates"][0]["content"]["parts"]
+            return "".join(p.get("text", "") for p in rp).strip()
+        except Exception:
+            pass  # Gemini out — re-route
+    return providers.fallback_generate(None, [{"role": "user", "parts": parts}]).strip()
