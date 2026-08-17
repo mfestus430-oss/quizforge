@@ -96,6 +96,23 @@
   .hd-item .btn{padding:8px 13px; font-size:.84rem; flex:none;}
   .hd-pct{font-weight:800; font-size:.98rem; flex:none;}
   .hd-empty{color:var(--muted); text-align:center; padding:14px 8px; font-size:.88rem; line-height:1.5;}
+  /* ---------------- home dashboard & bottom nav ---------------- */
+  .home-card{display:flex; align-items:center; gap:12px; background:var(--card2);
+    border:1px solid var(--border2); border-radius:16px; padding:14px; margin-bottom:10px;}
+  .home-card .hinfo{flex:1; min-width:0;}
+  .home-card strong{display:block; font-size:1rem;}
+  .home-card small{color:var(--muted); display:block; margin-top:2px;}
+  .dot3{display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:8px; flex:none;}
+  .bottomnav{position:fixed; left:0; right:0; bottom:0; z-index:39; display:none;
+    background:color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter:blur(12px);
+    -webkit-backdrop-filter:blur(12px); border-top:1px solid var(--border);
+    padding:5px 6px calc(5px + env(safe-area-inset-bottom));}
+  .bottomnav button{flex:1; background:none; border:none; color:var(--muted); cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:1px; padding:4px 0; border-radius:10px;}
+  .bottomnav button span:first-child{font-size:1.28rem;}
+  .bottomnav button span:last-child{font-size:.66rem; font-weight:600;}
+  .bottomnav button.active{color:var(--accent2);}
+  details.customize summary{color:var(--muted); cursor:pointer; padding:6px 2px; user-select:none;}
   /* ---------------- splash entrance ---------------- */
   #splash{position:fixed; inset:0; z-index:80; display:flex; flex-direction:column; align-items:center;
     justify-content:center; background:var(--bg);
@@ -271,7 +288,8 @@
 
   /* mobile polish — edge-to-edge app feel (no floating website cards) */
   @media (max-width: 560px){
-    main#main{padding:calc(66px + env(safe-area-inset-top)) 8px 26px;}
+    main#main{padding:calc(66px + env(safe-area-inset-top)) 8px 96px;}
+    .bottomnav{display:flex;}
     header{margin-top:0;}
     .topbar{padding:calc(8px + env(safe-area-inset-top)) 10px 8px; gap:8px;}
     .topbar .brand{font-size:1.1rem;}
@@ -394,13 +412,16 @@
     <span class="brand">Mi<span>Prep</span></span>
   </div>
   <div class="drawer-section">
-    <div class="drawer-label">Study modes</div>
-    <button class="nav-item active" id="tab-quiz">Quiz Me</button>
+    <div class="drawer-label">Menu</div>
+    <button class="nav-item active" id="tab-home">Home</button>
+    <div class="drawer-label" style="margin-top:8px;">Practice</div>
+    <button class="nav-item" id="tab-quiz">Quiz Me</button>
+    <div class="drawer-label" style="margin-top:8px;">Learn</div>
     <button class="nav-item" id="tab-teach">Teach Me</button>
     <button class="nav-item" id="tab-course">Course</button>
     <button class="nav-item" id="tab-cards">Flashcards</button>
-    <div class="drawer-label" style="margin-top:8px;">More</div>
-    <button class="nav-item" id="tab-history">Quiz history</button>
+    <div class="drawer-label" style="margin-top:8px;">Track</div>
+    <button class="nav-item" id="tab-history">Progress</button>
   </div>
   <div class="drawer-foot">
     <div id="account-bar">
@@ -427,6 +448,23 @@
   <p>Your AI tutor for <strong style="color:var(--text);">any subject</strong> — get quizzed, taught &amp; drilled.</p>
 </header>
 
+<!-- HOME DASHBOARD -->
+<div class="panel" id="home-panel">
+  <h2 id="home-greeting" style="margin-bottom:14px;"></h2>
+  <div id="home-continue"></div>
+  <div id="home-recommend"></div>
+  <div id="home-progress-wrap">
+    <div class="drawer-label" style="padding-left:0;">Your progress</div>
+    <div id="home-progress"></div>
+  </div>
+  <div class="drawer-label" style="padding-left:0; margin-top:16px;">Quick actions</div>
+  <div class="row" style="flex-wrap:wrap;">
+    <button class="btn ghost small" id="home-ask">Ask a question</button>
+    <button class="btn ghost small" id="home-practice">Practice quiz</button>
+    <button class="btn ghost small" id="home-course">Build a course</button>
+  </div>
+</div>
+
 <!-- QUIZ SETUP -->
 <div class="panel" id="upload-panel">
   <div class="resume-box hidden" id="resume-quiz-box">
@@ -434,6 +472,7 @@
     <button class="btn small" id="resume-quiz-btn">Continue</button>
     <button class="btn ghost small" id="discard-quiz-btn">🗑️ Discard</button>
   </div>
+  <input class="teach-input" id="practice-topic" placeholder="…or practice a topic — e.g. variance, photosynthesis, integration" style="margin-bottom:10px;" autocomplete="off">
   <div class="drop" id="drop">
     <div class="icon">📂</div>
     <p><strong>Click to choose files</strong> or drag &amp; drop here</p>
@@ -441,6 +480,8 @@
     <input type="file" id="file-input" multiple accept=".pptx,.pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.webp,.bmp,.tif,.tiff,image/*" hidden>
   </div>
   <div class="filelist" id="filelist"></div>
+  <details class="customize" id="customize">
+    <summary>Customize — questions, difficulty, timer…</summary>
   <div class="opts-grid">
     <div><label for="numq">Questions:&nbsp;</label>
       <select id="numq">
@@ -467,9 +508,10 @@
     <label class="check"><input type="checkbox" id="exam-mode"> Exam mode (results only at the end)</label>
     <label class="check"><input type="checkbox" id="short-answers"> Include typed short-answers (AI-graded)</label>
   </div>
+  </details>
   <div class="row">
     <span class="hint" id="bigq-hint"></span>
-    <button class="btn" id="generate" disabled>Generate quiz</button>
+    <button class="btn" id="generate" disabled>Start practice</button>
   </div>
   <div class="error hidden" id="error"></div>
 </div>
@@ -480,10 +522,10 @@
   <label style="display:block; margin-bottom:8px;">What do you want to learn? (or leave empty and just upload material)</label>
   <input class="teach-input" id="topic" placeholder="e.g. fractions, standard deviation, photosynthesis…">
   <div class="levels">
-    <button class="level active" data-level="std">Standard</button>
-    <button class="level" data-level="kid">Like I'm 7</button>
-    <button class="level" data-level="teen">High school</button>
-    <button class="level" data-level="facts">Quick facts</button>
+    <button class="level active" data-level="std">Deep dive</button>
+    <button class="level" data-level="kid">Beginner</button>
+    <button class="level" data-level="teen">School level</button>
+    <button class="level" data-level="facts">Quick revision</button>
   </div>
   <div class="drop" id="teach-drop" style="padding:26px 20px;">
     <div class="icon">📂</div>
@@ -503,10 +545,10 @@
 <div class="panel hidden" id="lesson-panel">
   <div class="levels" id="lesson-levels" style="margin:0 0 8px;">
     <span class="hint" style="align-self:center;">Explain as:</span>
-    <button class="level" data-level="std">Standard</button>
-    <button class="level" data-level="kid">Like I'm 7</button>
-    <button class="level" data-level="teen">High school</button>
-    <button class="level" data-level="facts">Quick facts</button>
+    <button class="level" data-level="std">Deep dive</button>
+    <button class="level" data-level="kid">Beginner</button>
+    <button class="level" data-level="teen">School level</button>
+    <button class="level" data-level="facts">Quick revision</button>
   </div>
   <div class="lesson" id="lesson"></div>
   <div class="filelist" id="followup-files"></div>
@@ -518,6 +560,12 @@
     <input type="file" id="camera-input" accept="image/*" capture="environment" hidden>
     <input class="teach-input" id="followup-q" placeholder="Ask a follow-up… or attach a photo/PDF">
     <button class="btn" id="followup-send">Ask</button>
+  </div>
+  <div class="row" id="reply-chips" style="flex-wrap:wrap; margin-top:8px;">
+    <button class="btn ghost small" data-q="Yes, that made sense — continue.">Yes, continue</button>
+    <button class="btn ghost small" data-q="I didn't fully understand — explain it differently.">Explain differently</button>
+    <button class="btn ghost small" data-q="Give me one tiny example.">Give me an example</button>
+    <button class="btn ghost small" data-q="Test me on this with 3 quick questions.">Test me</button>
   </div>
   <div class="center">
     <button class="btn ghost small" id="lesson-new">New lesson</button>
@@ -532,10 +580,10 @@
   <label style="display:block; margin-bottom:8px;">What should the course teach? (topic, or upload a book/slides/notes)</label>
   <input class="teach-input" id="course-topic" placeholder="e.g. probability, cell biology, financial accounting…">
   <div class="levels" id="course-levels">
-    <button class="level active" data-level="std">Standard</button>
-    <button class="level" data-level="kid">Like I'm 7</button>
-    <button class="level" data-level="teen">High school</button>
-    <button class="level" data-level="facts">Quick facts</button>
+    <button class="level active" data-level="std">Deep dive</button>
+    <button class="level" data-level="kid">Beginner</button>
+    <button class="level" data-level="teen">School level</button>
+    <button class="level" data-level="facts">Quick revision</button>
   </div>
   <div class="drop" id="course-drop" style="padding:26px 20px;">
     <div class="icon">📚</div>
@@ -569,10 +617,10 @@
   <div class="bar"><div id="cs-bar"></div></div>
   <div class="levels" id="cs-levels" style="margin:0 0 8px;">
     <span class="hint" style="align-self:center;">Explain as:</span>
-    <button class="level" data-level="std">Standard</button>
-    <button class="level" data-level="kid">Like I'm 7</button>
-    <button class="level" data-level="teen">High school</button>
-    <button class="level" data-level="facts">Quick facts</button>
+    <button class="level" data-level="std">Deep dive</button>
+    <button class="level" data-level="kid">Beginner</button>
+    <button class="level" data-level="teen">School level</button>
+    <button class="level" data-level="facts">Quick revision</button>
   </div>
   <div class="lesson" id="cs-lesson"></div>
   <div class="filelist" id="cs-files"></div>
@@ -642,9 +690,11 @@
   </div>
 </div>
 
-<!-- HISTORY -->
-<div class="panel hidden" id="history-panel">
-  <h2 style="margin-bottom:16px;">Your quiz history</h2>
+<!-- PROGRESS -->
+<div class="panel hidden" id="progress-panel">
+  <h2 style="margin-bottom:12px;">Progress</h2>
+  <div id="progress-stats"></div>
+  <div class="drawer-label" style="padding-left:0; margin-top:16px;">Quiz history</div>
   <div id="hist-list"></div>
   <div class="center">
     <button class="btn ghost small" id="hist-clear">Clear history</button>
@@ -693,6 +743,14 @@
 </div>
 </main>
 
+<nav class="bottomnav" id="bottomnav" aria-label="Bottom navigation">
+  <button data-mode="home" class="active"><span>🏠</span><span>Home</span></button>
+  <button data-mode="quiz"><span>📝</span><span>Practice</span></button>
+  <button data-mode="teach"><span>🍎</span><span>Learn</span></button>
+  <button data-mode="progress"><span>📊</span><span>Progress</span></button>
+  <button id="bnav-menu"><span>☰</span><span>Menu</span></button>
+</nav>
+
 <script>
 const $ = id => document.getElementById(id);
 let files = [], quiz = [], idx = 0, score = 0, answers = [], engineUsed = 'ai';
@@ -709,24 +767,28 @@ $('theme-btn').onclick = () => applyTheme(document.body.classList.contains('ligh
 applyTheme(localStorage.getItem('qf-theme') || 'dark');
 
 /* ---------------- panels & tabs ---------------- */
-const PANELS = ['upload-panel','loading-panel','quiz-panel','result-panel','teach-panel','lesson-panel',
-                'cards-panel','cards-player','history-panel','course-setup','course-syllabus','course-session'];
+const PANELS = ['home-panel','upload-panel','loading-panel','quiz-panel','result-panel','teach-panel','lesson-panel',
+                'cards-panel','cards-player','progress-panel','course-setup','course-syllabus','course-session'];
 function show(panel){ PANELS.forEach(p => $(p).classList.add('hidden')); $(panel).classList.remove('hidden'); }
 
-const TABS = {quiz:'tab-quiz', teach:'tab-teach', course:'tab-course', cards:'tab-cards', history:'tab-history'};
-let mode = 'quiz';
+const TABS = {home:'tab-home', quiz:'tab-quiz', teach:'tab-teach', course:'tab-course', cards:'tab-cards', progress:'tab-history'};
+let mode = 'home';
 Object.entries(TABS).forEach(([m, id]) => $(id).onclick = () => switchMode(m));
+document.querySelectorAll('#bottomnav [data-mode]').forEach(b => b.onclick = () => switchMode(b.dataset.mode));
+if ($('bnav-menu')) $('bnav-menu').onclick = () => openDrawer('menu-drawer');
 function switchMode(m){
   mode = m;
   Object.entries(TABS).forEach(([mm, id]) => $(id).classList.toggle('active', mm === m));
+  document.querySelectorAll('#bottomnav [data-mode]').forEach(b => b.classList.toggle('active', b.dataset.mode === m));
   clearTimer();
   closeDrawers();
   checkResumables();
-  if (m === 'quiz') show('upload-panel');
+  if (m === 'home'){ renderHome(); show('home-panel'); }
+  else if (m === 'quiz') show('upload-panel');
   else if (m === 'teach') show('teach-panel');
   else if (m === 'course') show(course ? 'course-syllabus' : 'course-setup'), course && renderSyllabus();
   else if (m === 'cards') show(cardsDeck.length ? 'cards-player' : 'cards-panel');
-  else { renderHistory(); show('history-panel'); }
+  else { renderProgress(); renderHistory(); show('progress-panel'); }
 }
 
 /* ---------------- top bar drawers (menu & history) ---------------- */
@@ -836,7 +898,10 @@ function wireDrop(dropId, inputId, listId, store, onChange){
   store.render = render;
 }
 const quizFiles = {list: []}, teachFilesStore = {list: []}, cardFiles = {list: []};
-wireDrop('drop','file-input','filelist', quizFiles, () => { $('generate').disabled = quizFiles.list.length === 0; });
+const genReady = () => { $('generate').disabled = quizFiles.list.length === 0 && !$('practice-topic').value.trim(); };
+wireDrop('drop','file-input','filelist', quizFiles, genReady);
+$('practice-topic').addEventListener('input', genReady);
+$('practice-topic').addEventListener('keydown', e => { if (e.key === 'Enter' && !$('generate').disabled) $('generate').click(); });
 wireDrop('teach-drop','teach-file-input','teach-filelist', teachFilesStore, () => {});
 wireDrop('cards-drop','cards-file-input','cards-filelist', cardFiles, () => { $('cards-go').disabled = cardFiles.list.length === 0; });
 
@@ -944,7 +1009,7 @@ function renderLessonLibrary(){
   $('lesson-library').innerHTML = lib.length === 0 ? '' :
     `<label style="display:block;margin-bottom:8px;">Your lessons — continue any of them:</label>` +
     lib.map(l => `<div class="lib-item">
-      <div class="linfo"><strong>🍎 ${l.topic.replace(/</g,'&lt;')}</strong><small>${ago(l.saved)} · ${l.level === 'std' ? 'Standard' : l.level === 'kid' ? "Like I'm 7" : l.level === 'teen' ? 'High school' : 'Quick facts'}</small></div>
+      <div class="linfo"><strong>🍎 ${l.topic.replace(/</g,'&lt;')}</strong><small>${ago(l.saved)} · ${l.level === 'std' ? 'Deep dive' : l.level === 'kid' ? 'Beginner' : l.level === 'teen' ? 'School level' : 'Quick revision'}</small></div>
       <button class="btn small" onclick="openLesson('${l.id}')">Continue</button>
       <button class="btn ghost small" onclick="deleteLesson('${l.id}')">🗑️</button>
     </div>`).join('') + `<hr class="divider">`;
@@ -997,6 +1062,167 @@ $('discard-quiz-btn').onclick = () => { clearQuizState(); checkResumables(); };
 $('resume-cards-btn').onclick = resumeActiveCards;
 $('discard-cards-btn').onclick = () => { clearCardsState(); checkResumables(); };
 
+/* ---------------- HOME dashboard: continue / recommend / progress ---------------- */
+function topicStats(){
+  try{ return JSON.parse(localStorage.getItem('qf-topics') || '{}'); }catch(e){ return {}; }
+}
+function homeCard(icon, title, sub, onclick, btn){
+  return `<div class="home-card"><div style="font-size:1.6rem;">${icon}</div>` +
+    `<div class="hinfo"><strong>${String(title).replace(/</g,'&lt;')}</strong><small>${String(sub).replace(/</g,'&lt;')}</small></div>` +
+    `<button class="btn small" onclick="${onclick}">${btn || 'Continue'}</button></div>`;
+}
+function topicColor(p){ return p >= 80 ? 'var(--accent2)' : p >= 50 ? 'var(--warn)' : 'var(--wrong)'; }
+function topicRows(entries){
+  return entries.map(([t, v]) => {
+    const p = Math.round(v.c / v.t * 100);
+    return `<div style="margin-bottom:6px;"><span class="dot3" style="background:${topicColor(p)}"></span>` +
+      `${t.replace(/</g,'&lt;')} <small style="color:var(--muted)">${p}% · ${v.t} q</small></div>`;
+  }).join('');
+}
+function renderHome(){
+  const h = new Date().getHours();
+  $('home-greeting').textContent = (h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening') + ' 👋';
+
+  // 1. Continue learning — the single most important action
+  let c = '';
+  const q = loadQuizState();
+  const courses = libLoad('qf-courses').sort((a,b) => b.saved - a.saved);
+  const uc = courses.find(cr => (cr.done || []).filter(Boolean).length < (cr.sessions || []).length);
+  const lastLesson = libLoad('qf-lessons').sort((a,b) => b.saved - a.saved)[0];
+  const cd = loadCardsState();
+  if (q && q.quiz && q.idx < q.quiz.length)
+    c = homeCard('📝', q.quizSource || 'Your quiz', `Question ${q.idx + 1} of ${q.quiz.length} — saved ${ago(q.saved)}`, 'resumeActiveQuiz()');
+  else if (uc)
+    c = homeCard('🎓', uc.title || 'Your course', `Session ${(uc.done || []).filter(Boolean).length + 1} of ${uc.sessions.length}`, `openCourse('${uc.cid}')`);
+  else if (lastLesson)
+    c = homeCard('🍎', lastLesson.topic || 'Your lesson', 'Saved ' + ago(lastLesson.saved), `openLesson('${lastLesson.id}')`);
+  else if (cd && cd.deck && cd.deck.length)
+    c = homeCard('🗂️', 'Flashcard deck', `${cd.deck.length} cards — card ${Math.min(cd.idx + 1, cd.deck.length)}`, 'resumeActiveCards()');
+  $('home-continue').innerHTML = c
+    ? '<div class="drawer-label" style="padding-left:0;">Continue learning</div>' + c
+    : '<div class="home-card"><div style="font-size:1.6rem;">👋</div><div class="hinfo"><strong>Welcome to MiPrep</strong><small>Upload your notes below, or ask me anything — pick Practice to start.</small></div></div>';
+
+  // 2. Recommended — fix your weakest topic
+  const entries = Object.entries(topicStats()).filter(([k, v]) => v.t >= 2);
+  entries.sort((a, b) => (a[1].c / a[1].t) - (b[1].c / b[1].t));
+  const weak = entries[0];
+  $('home-recommend').innerHTML = weak
+    ? '<div class="drawer-label" style="padding-left:0;">Recommended for you</div>' +
+      homeCard('🧠', 'Practice: ' + weak[0],
+               `${Math.round(weak[1].c / weak[1].t * 100)}% so far — 10 quick questions will fix it`,
+               `startTopicQuiz('${weak[0].replace(/[\']/g, '')}')`, 'Start')
+    : '';
+
+  // 3. Progress snapshot
+  const hist = JSON.parse(localStorage.getItem('qf-history') || '[]');
+  const avg = hist.length ? Math.round(hist.reduce((x, y) => x + y.pct, 0) / hist.length) : null;
+  $('home-progress').innerHTML = entries.length
+    ? topicRows(entries.slice(0, 6)) +
+      (avg !== null ? `<small style="color:var(--muted); display:block; margin-top:8px;">${hist.length} quizzes · ${avg}% average accuracy</small>` : '')
+    : '<p class="hint">Take a quiz and your topic strengths will appear here.</p>';
+}
+async function startTopicQuiz(topic){
+  show('loading-panel');
+  $('loading-text').innerHTML = `Writing 10 questions on <strong>${topic.replace(/</g,'&lt;')}</strong>…`;
+  const fd = new FormData();
+  fd.append('topic', topic);
+  fd.append('num_questions', 10);
+  fd.append('difficulty', 'medium');
+  fd.append('include_short', '0');
+  try{
+    const res = await fetch('/upload', {method:'POST', body:fd});
+    if (!res.ok){ const d = await res.json().catch(() => ({})); throw new Error(d.error || 'Something went wrong.'); }
+    let data = null;
+    if (res.body && window.ReadableStream){
+      const reader = res.body.getReader(), dec = new TextDecoder(); let buf = '';
+      while (true){
+        const {done, value} = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, {stream:true});
+        let nl;
+        while ((nl = buf.indexOf('\n')) >= 0){
+          const line = buf.slice(0, nl).trim(); buf = buf.slice(nl + 1);
+          if (!line) continue;
+          const evt = JSON.parse(line);
+          if (evt.error) throw new Error(evt.error);
+          if (evt.progress !== undefined)
+            $('loading-text').innerHTML = `Writing questions — <strong>${evt.progress}/${evt.total}</strong> ready`;
+          else if (evt.quiz) data = evt;
+        }
+      }
+    } else data = await res.json();
+    if (!data || !data.quiz) throw new Error('Something went wrong.');
+    quiz = data.quiz; engineUsed = data.engine || 'ai';
+    quizSource = 'Practice: ' + topic;
+    startQuiz(); saveQuizState();
+  }catch(err){
+    show('upload-panel');
+    $('error').textContent = '⚠️ ' + (err.message === 'Failed to fetch' ? 'Network error — check your connection.' : err.message);
+    $('error').classList.remove('hidden');
+  }
+}
+window.startTopicQuiz = startTopicQuiz; window.resumeActiveQuiz = resumeActiveQuiz;
+window.resumeActiveCards = resumeActiveCards; window.openCourse = openCourse; window.openLesson = openLesson;
+$('home-ask').onclick = () => { switchMode('teach'); setTimeout(() => $('topic').focus(), 60); };
+$('home-practice').onclick = () => switchMode('quiz');
+$('home-course').onclick = () => switchMode('course');
+
+/* ---------------- progress screen ---------------- */
+function renderProgress(){
+  const hist = JSON.parse(localStorage.getItem('qf-history') || '[]');
+  const days = new Set(hist.slice(0, 40).map(h => (h.date || '').slice(0, 10)));
+  let streak = 0;
+  const cur = new Date();
+  if (!days.has(cur.toISOString().slice(0, 10))) cur.setDate(cur.getDate() - 1);
+  while (days.has(cur.toISOString().slice(0, 10))){ streak++; cur.setDate(cur.getDate() - 1); }
+  const qs = hist.reduce((x, h) => x + (h.total || 0), 0);
+  const avg = hist.length ? Math.round(hist.reduce((x, h) => x + h.pct, 0) / hist.length) : 0;
+  const ts = Object.entries(topicStats()).sort((a, b) => (a[1].c / a[1].t) - (b[1].c / b[1].t));
+  $('progress-stats').innerHTML =
+    `<div class="row" style="gap:8px; flex-wrap:wrap;">` +
+    `<div class="home-card" style="flex:1; min-width:110px; flex-direction:column; text-align:center; margin:0;"><strong style="font-size:1.5rem;">${hist.length}</strong><small>quizzes</small></div>` +
+    `<div class="home-card" style="flex:1; min-width:110px; flex-direction:column; text-align:center; margin:0;"><strong style="font-size:1.5rem;">${qs}</strong><small>questions</small></div>` +
+    `<div class="home-card" style="flex:1; min-width:110px; flex-direction:column; text-align:center; margin:0;"><strong style="font-size:1.5rem;">${avg}%</strong><small>accuracy</small></div>` +
+    `<div class="home-card" style="flex:1; min-width:110px; flex-direction:column; text-align:center; margin:0;"><strong style="font-size:1.5rem;">${streak}🔥</strong><small>day streak</small></div>` +
+    `</div>` +
+    (ts.length ? '<div class="drawer-label" style="padding-left:0; margin-top:14px;">Topic strength — weakest first</div>' + topicRows(ts) : '');
+}
+
+/* ---------------- similar-question learning loop ---------------- */
+function addSimilarBtn(fb, q){
+  const b = document.createElement('button');
+  b.className = 'btn ghost small';
+  b.style.cssText = 'margin-top:10px;';
+  b.textContent = 'Try a similar question';
+  b.onclick = async () => {
+    b.disabled = true; b.textContent = 'Writing one…';
+    try{
+      const res = await fetch('/similar', {method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({question: q.question, options: q.options,
+          right: q.options ? q.options[q.answer] : q.answer,
+          explanation: q.explanation, topic: q.topic, outcome: 'incorrect'})});
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'unavailable');
+      quiz.splice(idx + 1, 0, data.question);
+      answers.splice(idx + 1, 0, undefined);
+      b.textContent = 'Added — press Next →';
+      saveQuizState();
+    }catch(e){
+      b.textContent = 'Unavailable right now';
+      setTimeout(() => b.remove(), 1600);
+    }
+  };
+  fb.appendChild(document.createElement('br'));
+  fb.appendChild(b);
+}
+
+/* ---------------- did-that-make-sense quick replies ---------------- */
+if ($('reply-chips'))
+  $('reply-chips').querySelectorAll('button').forEach(b => b.onclick = () => {
+    $('followup-q').value = b.dataset.q;
+    sendFollowup();
+  });
+
 /* ---------------- quiz generation ---------------- */
 $('generate').onclick = async () => {
   $('error').classList.add('hidden');
@@ -1009,6 +1235,7 @@ $('generate').onclick = async () => {
     : 'The AI is reading your material and writing questions…';
   const fd = new FormData();
   quizFiles.list.forEach(f => fd.append('files', f));
+  if ($('practice-topic').value.trim()) fd.append('topic', $('practice-topic').value.trim());
   fd.append('num_questions', n);
   fd.append('difficulty', $('difficulty').value);
   fd.append('include_short', $('short-answers').checked ? '1' : '0');
@@ -1181,6 +1408,7 @@ function recordMcq(i, btn){
     (!correct ? `The answer is “${q.options[q.answer]}”. ` : '') + (q.explanation || '');
   renderMath(fb);
   fb.classList.remove('hidden');
+  if (!correct) addSimilarBtn(fb, q);
   $('q-score').textContent = `Score: ${fmtScore(score)}`;
   showNext();
 }
@@ -1225,6 +1453,7 @@ function recordShort(val, result){
                  ` <br><small>Model answer: ${q.answer}</small>`;
   renderMath(fb);
   fb.classList.remove('hidden');
+  if (result.verdict !== 'correct') addSimilarBtn(fb, q);
   $('q-score').textContent = `Score: ${fmtScore(score)}`;
   showNext();
 }
@@ -1255,21 +1484,64 @@ function showResults(){
                      : 'Keep studying — try again after a re-read.';
   $('sub').textContent = examMode ? 'Exam mode — full review below.' : 'Review your answers below.';
   const icon = v => v === 'correct' ? '✅' : v === 'partial' ? '🟡' : '❌';
-  $('review').innerHTML = answers.map(a =>
+  $('review').innerHTML = answers.map(a => a || {verdict:'wrong', q:'(similar question added — not answered)', picked:'—', right:'', explanation:''}).map(a =>
     `<div class="rev"><div class="q">${icon(a.verdict)} ${a.q}</div>
      <div class="${a.verdict==='correct'?'a':'x'}">You: ${a.picked}</div>
      ${a.verdict !== 'correct' ? `<div class="a">Answer: ${a.right}</div>` : ''}
      ${a.explanation ? `<div><small>${a.explanation}</small></div>` : ''}</div>`).join('');
+  const agg = {};
+  answers.forEach((a, i) => {
+    if (!a) return;
+    const t = (quiz[i] && quiz[i].topic) || '';
+    if (!t) return;
+    agg[t] = agg[t] || {c: 0, t: 0};
+    agg[t].t++;
+    if (a.verdict === 'correct') agg[t].c++;
+    else if (a.verdict === 'partial') agg[t].c += 0.5;
+  });
+  const ranks = Object.entries(agg).map(([t, v]) => [t, v.c / v.t]).sort((a, b) => a[1] - b[1]);
+  if (ranks.length){
+    const good = ranks.filter(r => r[1] >= 0.8), bad = ranks.filter(r => r[1] < 0.5);
+    let html = '<hr class="divider">';
+    if (good.length) html += '<p style="margin-bottom:6px;"><strong>What you know</strong></p>' +
+      good.map(([t]) => `<div><span class="dot3" style="background:var(--accent2)"></span>${t.replace(/</g,'&lt;')}</div>`).join('');
+    if (bad.length) html += '<p style="margin:12px 0 6px;"><strong>What needs work</strong></p>' +
+      bad.map(([t]) => `<div><span class="dot3" style="background:var(--wrong)"></span>${t.replace(/</g,'&lt;')}</div>`).join('');
+    if (bad.length) html += homeCard('🎯', 'Next: practice ' + bad[0][0], 'Your next best action — 10 questions',
+      `startTopicQuiz('${bad[0][0].replace(/[\']/g, '')}')`, 'Start');
+    $('review').innerHTML += html;
+  }
   renderMath($('review'));
   saveHistory(pct);
 }
 
 function saveHistory(pct){
   const hist = JSON.parse(localStorage.getItem('qf-history') || '[]');
+  const topics = {};
+  answers.forEach((a, i) => {
+    if (!a) return;
+    const t = (quiz[i] && quiz[i].topic) || '';
+    if (!t) return;
+    topics[t] = topics[t] || {c: 0, t: 0};
+    topics[t].t++;
+    if (a.verdict === 'correct') topics[t].c++;
+    else if (a.verdict === 'partial') topics[t].c += 0.5;
+  });
   hist.unshift({date: new Date().toISOString(), source: quizSource.slice(0,60),
                 score: fmtScore(score), total: quiz.length, pct,
-                difficulty: $('difficulty').value, exam: examMode});
+                difficulty: $('difficulty').value, exam: examMode, topics});
   localStorage.setItem('qf-history', JSON.stringify(hist.slice(0,100)));
+  try{
+    const agg = topicStats();
+    Object.entries(topics).forEach(([t, v]) => {
+      agg[t] = agg[t] || {c: 0, t: 0, u: Date.now()};
+      agg[t].c += v.c; agg[t].t += v.t; agg[t].u = Date.now();
+    });
+    const keys = Object.keys(agg);
+    if (keys.length > 40)
+      keys.sort((a, b) => agg[a].u - agg[b].u).slice(0, keys.length - 40).forEach(k => delete agg[k]);
+    localStorage.setItem('qf-topics', JSON.stringify(agg));
+  }catch(e){}
 }
 function renderHistory(){
   const hist = JSON.parse(localStorage.getItem('qf-history') || '[]');
@@ -1397,7 +1669,7 @@ $('teach-go').onclick = async () => {
    Vertical chat of blocks; each block flips horizontally between at most 4
    level versions: ✨ Standard · 🧒 Like I'm 7 · 🎒 High school · ⚡ Quick facts.
    Drag a block right (or tap ↩️) to reply to it, WhatsApp-style. */
-const LEVEL_NAMES = {std:'Standard', kid:"Like I'm 7", teen:'High school', facts:'Quick facts'};
+const LEVEL_NAMES = {std:'Deep dive', kid:'Beginner', teen:'School level', facts:'Quick revision'};
 const LEVEL_ASK = {std:'in your normal clear style ✨', kid:"like I'm 7 🧒", teen:'at high-school level 🎒', facts:'as a rapid fact sheet: key facts, formulas with symbols explained, and classic traps — no prose ⚡'};
 const MAX_VERSIONS = 4;   // hard cap: one page per level
 const CTX = {};
@@ -1845,16 +2117,27 @@ function doneCount(){ return courseDone().filter(Boolean).length; }
 function renderSyllabus(){
   const done = courseDone();
   const next = done.findIndex(d => !d);   // first not-completed = suggested next
-  $('course-title').textContent = '🎓 ' + course.title;
-  $('course-progress').textContent = `${doneCount()} of ${course.sessions.length} sessions completed`;
-  $('syllabus').innerHTML = course.sessions.map((s,i) => {
-    const state = done[i] ? 'done' : i === next ? 'current' : 'open';
-    const badge = done[i] ? '✅' : i === next ? '▶' : '»';
-    return `<div class="sess ${state}" data-i="${i}" title="Open session ${i+1}">
-      <div class="snum">${i+1}</div>
-      <div class="sinfo"><strong>${s.title}</strong><small>${s.goal}</small></div>
-      <div class="badge">${badge}</div></div>`;
-  }).join('');
+  const total = course.sessions.length, dc = doneCount();
+  $('course-title').textContent = course.title;
+  $('course-progress').innerHTML =
+    `${dc} / ${total} lessons complete` +
+    `<div style="height:8px; background:var(--card2); border-radius:99px; overflow:hidden; margin-top:6px;">` +
+    `<div style="height:100%; width:${Math.round(dc / total * 100)}%; background:linear-gradient(90deg,var(--accent),var(--accent2));"></div></div>`;
+  let html = '';
+  const perModule = 3;
+  for (let m = 0; m < course.sessions.length; m += perModule){
+    html += `<div class="drawer-label" style="padding-left:4px;">Module ${Math.floor(m / perModule) + 1}</div>`;
+    html += course.sessions.slice(m, m + perModule).map((s, j) => {
+      const i = m + j;
+      const state = done[i] ? 'done' : i === next ? 'current' : 'open';
+      const badge = done[i] ? '✅' : i === next ? '🟢' : '🔒';
+      return `<div class="sess ${state}" data-i="${i}" title="Open session ${i+1}">
+        <div class="snum">${i+1}</div>
+        <div class="sinfo"><strong>${s.title}</strong><small>${i === next ? '← Continue here' : s.goal}</small></div>
+        <div class="badge">${badge}</div></div>`;
+    }).join('');
+  }
+  $('syllabus').innerHTML = html;
   // every session is clickable — jump anywhere, revisit done ones, skip ahead — no locks
   $('syllabus').querySelectorAll('.sess').forEach(el => {
     el.onclick = () => openSession(+el.dataset.i, false);
@@ -2059,7 +2342,7 @@ async function rebuildCourse(saved){
 
 
 /* ---------------- accounts & cross-device sync ---------------- */
-const SYNC_KEYS = ['qf-lessons','qf-courses','qf-history','qf-active-quiz','qf-active-cards'];
+const SYNC_KEYS = ['qf-lessons','qf-courses','qf-history','qf-active-quiz','qf-active-cards','qf-topics'];
 let authToken = localStorage.getItem('qf-token') || null;
 let authUser  = localStorage.getItem('qf-user') || null;
 let syncTimer = null;
@@ -2206,8 +2489,9 @@ initGoogleSignIn();
 updateAccountBtn();
 if (authToken) pullSync().then(checkResumables);
 
-/* check for unfinished sessions on load */
+/* check for unfinished sessions on load — then land on the Home dashboard */
 checkResumables();
+switchMode('home');
 </script>
 </body>
 </html>

@@ -12,7 +12,7 @@ from collections import Counter
 
 from flask import Flask, Response, jsonify, render_template, request, send_file
 
-from ai_quiz import ai_generate_quiz, grade_short_answer, ai_flashcards
+from ai_quiz import ai_generate_quiz, grade_short_answer, ai_flashcards, ai_topic_quiz
 from ai_course import make_syllabus, teach_session, ask_course
 import db
 
@@ -271,9 +271,10 @@ def index():
 
 @app.route("/upload", methods=["POST"])
 def upload():
-    files = request.files.getlist("files")
-    if not files or all(f.filename == "" for f in files):
-        return jsonify({"error": "No file uploaded."}), 400
+    files = [f for f in request.files.getlist("files") if f.filename]
+    topic = (request.form.get("topic") or "").strip()
+    if not files and not topic:
+        return jsonify({"error": "Upload material or type a topic to practice."}), 400
 
     num_q = max(3, min(500, int(request.form.get("num_questions", 10))))
     all_text, names = [], []
@@ -289,7 +290,7 @@ def upload():
             return jsonify({"error": f"Could not read {f.filename}: {e}"}), 400
 
     text = "\n".join(all_text)
-    if len(text.split()) < 40:
+    if files and len(text.split()) < 40:
         return jsonify({"error": "Not enough readable text found in the file(s) to build a quiz. For images, make sure the photo is sharp, well-lit, and the text is clearly visible."}), 400
 
     difficulty = request.form.get("difficulty", "medium")
@@ -305,8 +306,12 @@ def upload():
 
         def run():
             try:
-                quiz_ = ai_generate_quiz(text, num_q, difficulty, include_short,
-                                         progress_cb=lambda d, t: evq.put(("p", d, t)))
+                if topic and not text:
+                    quiz_ = ai_topic_quiz(topic, num_q, difficulty, include_short,
+                                          progress_cb=lambda d, t: evq.put(("p", d, t)))
+                else:
+                    quiz_ = ai_generate_quiz(text, num_q, difficulty, include_short,
+                                             progress_cb=lambda d, t: evq.put(("p", d, t)))
                 evq.put(("ok", quiz_))
             except Exception as e:
                 app.logger.warning("AI generation failed (%s); using built-in engine", e)
@@ -322,6 +327,11 @@ def upload():
                 quiz_out = ev[1]
                 break
             else:
+                if topic and not text:
+                    yield json.dumps({"error": "Topic practice needs the AI — it's briefly unavailable "
+                                               "(quota). Upload material for an instant offline quiz, "
+                                               "or try again shortly."}) + "\n"
+                    return
                 eng = "basic"
                 quiz_out = generate_quiz(text, num_q)
                 break
@@ -795,6 +805,32 @@ def sync():
         db.save_sync(user, payload)
         return jsonify({"ok": True})
     return jsonify(db.load_sync(user))
+
+
+@app.route("/similar", methods=["POST"])
+def similar_question():
+    """One fresh question on the same concept — the wrong-answer learning loop."""
+    data = request.get_json(silent=True) or {}
+    question = (data.get("question") or "").strip()
+    if not question:
+        return jsonify({"error": "Missing question."}), 400
+    from ai_quiz import SIMILAR_PROMPT, _call_json, _validate
+    prompt = SIMILAR_PROMPT.format(
+        outcome=data.get("outcome") or "incorrect",
+        question=question[:500],
+        options=json.dumps(data.get("options") or [])[:400],
+        answer=str(data.get("right") or data.get("answer") or "")[:200],
+        explanation=str(data.get("explanation") or "")[:300],
+        topic=str(data.get("topic") or "the same concept")[:60])
+    try:
+        parsed = _call_json(prompt, max_tokens=1024, temperature=0.9)
+        qs = _validate(parsed.get("questions", []))
+        if not qs:
+            raise RuntimeError("no valid question returned")
+        return jsonify({"question": qs[0]})
+    except Exception as e:
+        app.logger.warning("similar failed: %s", e)
+        return jsonify({"error": "The AI is briefly unavailable — try again in a moment."}), 502
 
 
 @app.route("/manifest.webmanifest")

@@ -67,11 +67,18 @@ def make_image_part(data: bytes, mime: str):
 import providers
 
 
+STRUCTURE_RULE = """
+
+LESSON STRUCTURE (when teaching a topic from scratch): organise the lesson as
+"## What it is" (short core explanation) → "## Example" (one tiny worked example)
+→ "## Your turn" (one practice question with "🤫 Answer:" below it). Compact, no filler."""
+
+
 def _system_for(level, has_material):
     system = LEVEL_PROMPTS.get(level, LEVEL_PROMPTS["std"])
     if has_material:
         system += "\n\n" + TEACH_MATERIAL_HINT
-    return system
+    return system + STRUCTURE_RULE
 
 
 def _require_some_ai():

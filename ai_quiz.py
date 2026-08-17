@@ -67,6 +67,8 @@ Rules:
 - Aim for HIGHER-ORDER THINKING: application, analysis, comparison, cause-effect and
   multi-step reasoning — not just plain recall. Mix a few easy warm-ups with genuinely
   challenging questions that make students THINK.
+- Tag every question with "topic": a 1-4 word label of the concept it tests
+  (e.g. "Variance", "Light reactions", " Calvin cycle").
 - Multiple-choice questions: exactly 4 options, only one correct, distractors plausible.
 - When the material involves maths or statistics, prioritise definitions, formulas,
   calculations and interpretation questions, and write notation in LaTeX wrapped in $...$
@@ -78,8 +80,8 @@ Rules:
 
 Return ONLY valid JSON, no markdown fences, in this exact shape:
 {{"questions":[
-  {{"type":"mcq","question":"...","options":["A","B","C","D"],"answer":0,"explanation":"..."}},
-  {{"type":"short","question":"...","answer":"concise model answer","explanation":"..."}}
+  {{"type":"mcq","question":"...","topic":"...","options":["A","B","C","D"],"answer":0,"explanation":"..."}},
+  {{"type":"short","question":"...","topic":"...","answer":"concise model answer","explanation":"..."}}
 ]}}
 For "mcq", "answer" is the 0-based index of the correct option.
 
@@ -263,6 +265,7 @@ def _validate(qlist):
             if isinstance(ans, str) and ans.strip():
                 out.append({"type": "short", "question": text.strip(),
                             "answer": ans.strip(),
+                            "topic": str(q.get("topic", "")).strip()[:40],
                             "explanation": str(q.get("explanation", "")).strip()})
         else:
             opts = q.get("options", [])
@@ -272,6 +275,7 @@ def _validate(qlist):
                 out.append({"type": "mcq", "question": text.strip(),
                             "options": [str(o).strip() for o in opts],
                             "answer": ans,
+                            "topic": str(q.get("topic", "")).strip()[:40],
                             "explanation": str(q.get("explanation", "")).strip()})
     return out
 
@@ -398,3 +402,73 @@ def ai_flashcards(text, count=20):
     if len(cards) < 3:
         raise RuntimeError("AI returned too few cards")
     return cards[:count]
+
+
+TOPIC_PROMPT = """You are an expert exam-question writer. Write {n} high-quality questions at {difficulty}
+difficulty about the topic: {topic}.
+
+{short_rule}
+
+Rules:
+- Aim for HIGHER-ORDER THINKING: application, analysis, comparison, cause-effect and
+  multi-step reasoning — mix a few warm-ups with genuinely challenging questions.
+- Do not repeat these existing questions; cover different aspects: {avoid}
+- Multiple-choice: exactly 4 options, one correct, plausible distractors.
+- Tag every question with "topic": a 1-4 word label (the topic or a sub-topic).
+- Write maths notation in LaTeX wrapped in $...$.
+- Include a ONE short sentence explanation of the correct answer (max 20 words).
+
+Return ONLY valid JSON, no markdown fences:
+{{"questions":[
+  {{"type":"mcq","question":"...","topic":"...","options":["A","B","C","D"],"answer":0,"explanation":"..."}},
+  {{"type":"short","question":"...","topic":"...","answer":"concise model answer","explanation":"..."}}
+]}}
+For "mcq", "answer" is the 0-based index of the correct option.
+"""
+
+
+def ai_topic_quiz(topic, num_questions=10, difficulty="medium", include_short=False, progress_cb=None):
+    """Quiz built from AI knowledge on a bare topic (no uploaded material)."""
+    if not API_KEYS:
+        raise RuntimeError("no API key configured")
+    questions, seen = [], []
+
+    def add(qs):
+        for q in qs:
+            key = re.sub(r"\W+", "", q["question"].lower())[:80]
+            if key and key not in seen:
+                seen.append(key)
+                questions.append(q)
+        if progress_cb:
+            try:
+                progress_cb(len(questions), num_questions)
+            except Exception:
+                pass
+
+    def one(n, avoid):
+        prompt = TOPIC_PROMPT.format(
+            n=n, difficulty=difficulty, topic=topic[:120],
+            short_rule=SHORT_RULE_ON if include_short else SHORT_RULE_OFF, avoid=avoid)
+        return _validate(_call_json(prompt).get("questions", []))
+
+    add(one(min(num_questions, BATCH_SIZE), "none yet"))
+    remaining = num_questions - len(questions)
+    if remaining > 0:
+        add(one(min(remaining, BATCH_SIZE), "; ".join(q["question"][:60] for q in questions[:40])))
+    if len(questions) < 3:
+        raise RuntimeError("AI returned too few valid questions")
+    return questions[:num_questions]
+
+
+SIMILAR_PROMPT = """A student just answered this quiz question {outcome}:
+
+Question: {question}
+Options: {options}
+Correct answer: {answer}
+Explanation: {explanation}
+
+Write ONE fresh question testing the SAME concept ({topic}) with different
+numbers/context so they get a real second attempt. Same difficulty, same style.
+Return ONLY valid JSON, no markdown fences:
+{{"questions":[{{"type":"mcq","question":"...","topic":"...","options":["A","B","C","D"],"answer":0,"explanation":"..."}}]}}
+"""
