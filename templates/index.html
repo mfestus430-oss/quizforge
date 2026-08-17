@@ -3,16 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MiPrep — Your AI study companion</title>
-<meta name="description" content="MiPrep turns your slides, PDFs, notes and photos into AI quizzes, lessons, courses and flashcards. Free AI-powered study companion built by Festus Mensah.">
+<title>MiPrep — Master Math &amp; Statistics with AI</title>
+<meta name="description" content="MiPrep is your AI math & statistics tutor: snap a problem for a step-by-step solution, get taught any math topic from scratch, and drill with quizzes, courses and flashcards. Built by Festus Mensah.">
 <meta name="keywords" content="MiPrep, AI quiz generator, study app, flashcards, exam prep, learn, Ghana">
 <meta name="author" content="Festus Mensah">
-<meta property="og:title" content="MiPrep — Your AI study companion">
-<meta property="og:description" content="Turn your slides, PDFs and photos into quizzes, lessons, courses and flashcards — powered by AI. Free to use.">
+<meta property="og:title" content="MiPrep — Master Math & Statistics with AI">
+<meta property="og:description" content="Snap a math problem, get the full worked solution. Learn any math or stats topic explained your way. Free AI tutor.">
 <meta property="og:type" content="website">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="MiPrep — Your AI study companion">
-<meta name="twitter:description" content="Turn your slides, PDFs and photos into AI quizzes, lessons, courses and flashcards.">
+<meta name="twitter:title" content="MiPrep — Master Math & Statistics with AI">
+<meta name="twitter:description" content="Your AI math & statistics tutor — solve, learn, quiz, master.">
 <meta name="theme-color" content="#7c5cff">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
 <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
@@ -36,11 +36,32 @@
                      radial-gradient(circle at 85% 80%, rgba(0,212,166,.10), transparent 40%);
     transition:background .3s, color .3s;
   }
-  header{text-align:center; margin:10px 0 22px; position:relative; width:100%; max-width:640px;}
+  header{text-align:center; margin:6px 0 16px; position:relative; width:100%; max-width:640px;}
+  #page-pill{display:inline-block; margin-top:6px; background:var(--card); border:1px solid var(--border2);
+    border-radius:12px; padding:9px 26px; font-weight:700; font-size:1.05rem;}
   header h1{font-size:2.2rem; letter-spacing:-.5px;}
   header h1 span{background:linear-gradient(90deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; color:transparent;}
   header p{color:var(--muted); margin-top:8px;}
-  #theme-btn{position:fixed; right:14px; top:14px; z-index:40; background:var(--card); border:1px solid var(--border);
+  #menu-btn{position:fixed; right:14px; top:14px; z-index:40; background:var(--card); border:1px solid var(--border);
+    border-radius:12px; padding:8px 13px; cursor:pointer; font-size:1.15rem; color:var(--text);}
+  .badge-dot{position:absolute; top:-6px; right:-6px; background:var(--wrong); color:#fff; border-radius:999px;
+    font-size:.7rem; font-weight:700; padding:2px 7px; border:2px solid var(--bg);}
+  #menu-btn{position:fixed;}
+  #drawer-overlay{position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:55;}
+  #drawer{position:fixed; top:0; right:0; height:100vh; width:280px; max-width:85vw; background:var(--card);
+    border-left:1px solid var(--border); z-index:60; padding:22px 16px; transform:translateX(105%);
+    transition:transform .25s; display:flex; flex-direction:column; gap:4px; overflow-y:auto;}
+  #drawer.open{transform:none;}
+  .drawer-head{font-weight:800; font-size:1.2rem; margin-bottom:14px;}
+  .drawer-item{display:flex; align-items:center; gap:12px; width:100%; padding:13px 14px; background:none;
+    border:none; color:var(--text); font-size:1.02rem; border-radius:10px; cursor:pointer; text-align:left;}
+  .drawer-item:hover{background:var(--card2);}
+  .drawer-item .dbadge{margin-left:auto; background:var(--wrong); color:#fff; border-radius:999px; font-size:.72rem; font-weight:700; padding:2px 8px;}
+  .drawer-sep{border:none; border-top:1px solid var(--border); margin:10px 0;}
+  .unfin{background:rgba(255,92,122,.1); border:1px solid var(--wrong); border-radius:12px; padding:12px 14px; margin-bottom:14px;}
+  .unfin strong{display:block; margin-bottom:6px;}
+  .tabs{display:none;}
+  #theme-btn{position:fixed; right:66px; top:14px; z-index:40; background:var(--card); border:1px solid var(--border);
     border-radius:12px; padding:8px 12px; cursor:pointer; font-size:1.1rem;}
   #account-bar{position:fixed; left:14px; top:14px; z-index:40;}
   .signin-pill{background:var(--card); border:1px solid var(--border); color:var(--text);
@@ -54,7 +75,7 @@
   .panel{width:100%; max-width:640px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:28px; box-shadow:0 18px 50px rgba(0,0,0,.25);}
   .hidden{display:none !important;}
 
-  .tabs{display:flex; gap:8px; margin-bottom:20px; flex-wrap:wrap; justify-content:center;}
+  
   .tab{background:var(--card); border:1px solid var(--border); color:var(--muted); border-radius:12px;
     padding:10px 16px; font-size:.95rem; font-weight:600; cursor:pointer; transition:.15s;}
   .tab:hover{color:var(--text);}
@@ -199,7 +220,7 @@
     body{padding:14px 8px 40px;}
     header h1{font-size:1.7rem;}
     header{margin-top:44px;}
-    #theme-btn{right:10px; top:10px; padding:7px 10px;}
+    #theme-btn{right:58px; top:10px; padding:7px 10px;} #menu-btn{right:10px; top:10px;}
     #account-bar{left:10px; top:10px;}
     .panel{padding:18px 14px;}
     .tabs{gap:6px;}
@@ -244,14 +265,26 @@
 </head>
 <body>
 <header>
-  <h1>⚡ Mi<span>Prep</span></h1>
-  <p>Upload your slides or notes — get quizzed, taught, or drilled with flashcards.</p>
-  <p style="margin-top:4px; font-size:.85rem; color:var(--muted);">Built by <strong style="background:linear-gradient(90deg,var(--accent),var(--accent2)); -webkit-background-clip:text; background-clip:text; color:transparent;">Festus Mensah</strong></p>
+  <div id="page-pill">📝 Quiz Me</div>
   <button id="theme-btn" title="Toggle light/dark">🌙</button>
   <div id="account-bar">
     <button id="account-btn" class="signin-pill">Sign in</button>
   </div>
 </header>
+<button id="menu-btn">☰<span id="menu-badge" class="badge-dot hidden"></span></button>
+<div id="drawer-overlay" class="hidden"></div>
+<nav id="drawer">
+  <div class="drawer-head">⚡ Mi<span style="color:var(--accent2)">Prep</span></div>
+  <button class="drawer-item" data-mode="solve">🧮 Solve</button>
+  <button class="drawer-item" data-mode="quiz">📝 Quiz Me</button>
+  <button class="drawer-item" data-mode="teach">🍎 Teach Me</button>
+  <button class="drawer-item" data-mode="course">🎓 Course</button>
+  <button class="drawer-item" data-mode="cards">🗂️ Flashcards</button>
+  <button class="drawer-item" data-mode="history">📊 History<span class="dbadge hidden" id="hist-badge"></span></button>
+  <hr class="drawer-sep">
+  <button class="drawer-item" id="drawer-account">👤 Sign in</button>
+  <button class="drawer-item" id="drawer-theme">🌙 Theme</button>
+</nav>
 
 <!-- ACCOUNT MODAL -->
 <div id="account-modal" class="hidden" style="position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:50; display:flex; align-items:center; justify-content:center; padding:16px;">
@@ -273,12 +306,34 @@
   </div>
 </div>
 
-<div class="tabs">
-  <button class="tab active" id="tab-quiz">📝 Quiz Me</button>
-  <button class="tab" id="tab-teach">🍎 Teach Me</button>
-  <button class="tab" id="tab-course">🎓 Course</button>
-  <button class="tab" id="tab-cards">🗂️ Flashcards</button>
-  <button class="tab" id="tab-history">📊 History</button>
+
+<!-- SOLVE -->
+<div class="panel hidden" id="solve-panel">
+  <label style="display:block; margin-bottom:8px;">🧮 Type a math/stats problem — or snap a photo of it:</label>
+  <textarea class="teach-input" id="solve-q" rows="3" placeholder="e.g. Solve 2x² + 5x − 3 = 0   ·   or just attach a photo of the problem 📷"></textarea>
+  <div class="levels" id="solve-levels">
+    <span class="hint" style="align-self:center;">Explain:</span>
+    <button class="level active" data-level="std">✨ Standard</button>
+    <button class="level" data-level="kid">🧒 Like I'm 7</button>
+    <button class="level" data-level="teen">🎒 High school</button>
+    <button class="level" data-level="facts">⚡ Just the steps</button>
+  </div>
+  <div class="filelist" id="solve-files"></div>
+  <div class="row">
+    <div style="display:flex; gap:8px;">
+      <button class="btn ghost small" id="solve-attach-btn" title="Attach a photo/file">📎</button>
+      <button class="btn ghost small" id="solve-camera-btn" title="Snap the problem">📷</button>
+      <input type="file" id="solve-file-input" multiple accept=".png,.jpg,.jpeg,.webp,.bmp,.pdf,.txt,image/*" hidden>
+      <input type="file" id="solve-camera-input" accept="image/*" capture="environment" hidden>
+    </div>
+    <button class="btn" id="solve-go">Solve it 🧮</button>
+  </div>
+  <div class="error hidden" id="solve-error"></div>
+  <div class="lesson hidden" id="solve-result" style="margin-top:18px;"></div>
+  <div class="center hidden" id="solve-actions">
+    <button class="btn ghost small" id="solve-copy">📋 Copy solution</button>
+    <button class="btn ghost small" id="solve-new">🧮 New problem</button>
+  </div>
 </div>
 
 <!-- QUIZ SETUP -->
@@ -563,18 +618,19 @@ applyTheme(localStorage.getItem('qf-theme') || 'dark');
 
 /* ---------------- panels & tabs ---------------- */
 const PANELS = ['upload-panel','loading-panel','quiz-panel','result-panel','teach-panel','lesson-panel',
-                'cards-panel','cards-player','history-panel','course-setup','course-syllabus','course-session'];
+                'cards-panel','cards-player','history-panel','course-setup','course-syllabus','course-session','solve-panel'];
 function show(panel){ PANELS.forEach(p => $(p).classList.add('hidden')); $(panel).classList.remove('hidden'); }
 
-const TABS = {quiz:'tab-quiz', teach:'tab-teach', course:'tab-course', cards:'tab-cards', history:'tab-history'};
+const TABS = {solve:'tab-solve', quiz:'tab-quiz', teach:'tab-teach', course:'tab-course', cards:'tab-cards', history:'tab-history'};
 let mode = 'quiz';
-Object.entries(TABS).forEach(([m, id]) => $(id).onclick = () => switchMode(m));
+const MODE_NAMES = {solve:'🧮 Solve', quiz:'📝 Quiz Me', teach:'🍎 Teach Me', course:'🎓 Course', cards:'🗂️ Flashcards', history:'📊 History'};
 function switchMode(m){
   mode = m;
-  Object.entries(TABS).forEach(([mm, id]) => $(id).classList.toggle('active', mm === m));
+  $('page-pill').textContent = MODE_NAMES[m] || 'MiPrep';
   clearTimer();
   checkResumables();
-  if (m === 'quiz') show('upload-panel');
+  if (m === 'solve') show('solve-panel');
+  else if (m === 'quiz') show('upload-panel');
   else if (m === 'teach') show('teach-panel');
   else if (m === 'course') show(course ? 'course-syllabus' : 'course-setup'), course && renderSyllabus();
   else if (m === 'cards') show(cardsDeck.length ? 'cards-player' : 'cards-panel');
@@ -1020,9 +1076,26 @@ function saveHistory(pct){
                 difficulty: $('difficulty').value, exam: examMode});
   localStorage.setItem('qf-history', JSON.stringify(hist.slice(0,100)));
 }
+function renderUnfinished(){
+  let html = '';
+  const q = loadQuizState();
+  if (q && q.quiz && q.idx < q.quiz.length)
+    html += `<div class="unfin"><strong>⏸️ Unfinished quiz</strong>${q.quizSource || 'Quiz'} — question ${q.idx+1} of ${q.quiz.length}, saved ${ago(q.saved)}
+      <div class="center" style="margin-top:8px;"><button class="btn small" onclick="switchMode('quiz')">▶️ Continue</button></div></div>`;
+  const c = loadCardsState();
+  if (c && c.deck && c.deck.length)
+    html += `<div class="unfin"><strong>⏸️ Flashcard deck</strong>${c.deck.length} cards — card ${c.idx+1}, saved ${ago(c.saved)}
+      <div class="center" style="margin-top:8px;"><button class="btn small" onclick="switchMode('cards')">▶️ Continue</button></div></div>`;
+  libLoad('qf-courses').forEach(co => {
+    const d = (co.done||[]).filter(Boolean).length, t = (co.sessions||[]).length;
+    if (d < t) html += `<div class="unfin"><strong>⏸️ Course: ${(co.title||'Course').replace(/</g,'&lt;')}</strong>${d}/${t} sessions done, saved ${ago(co.saved)}
+      <div class="center" style="margin-top:8px;"><button class="btn small" onclick="openCourse('${co.cid}')">▶️ Continue</button></div></div>`;
+  });
+  return html ? `<h3 style="margin:0 0 10px;">🔔 Unfinished — pick up where you left off</h3>${html}<hr class="divider">` : '';
+}
 function renderHistory(){
   const hist = JSON.parse(localStorage.getItem('qf-history') || '[]');
-  $('hist-list').innerHTML = hist.length === 0
+  $('hist-list').innerHTML = renderUnfinished() + (hist.length === 0
     ? '<p style="color:var(--muted)">No quizzes taken yet. Your scores will appear here. 📈</p>'
     : hist.map(h => {
         const d = new Date(h.date);
@@ -1031,7 +1104,7 @@ function renderHistory(){
           <div><strong>${h.source || 'Quiz'}</strong>
           <small>${d.toLocaleDateString()} ${d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})} · ${h.total} questions · ${h.difficulty}${h.exam ? ' · 🎓 exam' : ''}</small></div>
           <div class="pct ${cls}">${h.pct}%<small style="text-align:right">${h.score}/${h.total}</small></div>
-        </div>`; }).join('');
+        </div>`; }).join(''));
 }
 $('hist-clear').onclick = () => { localStorage.removeItem('qf-history'); renderHistory(); };
 
@@ -1921,6 +1994,105 @@ initGoogleSignIn();
 
 updateAccountBtn();
 if (authToken) pullSync().then(checkResumables);
+
+
+
+/* ---------------- drawer menu ---------------- */
+function openDrawer(){ $('drawer').classList.add('open'); $('drawer-overlay').classList.remove('hidden'); refreshBadges(); }
+function closeDrawer(){ $('drawer').classList.remove('open'); $('drawer-overlay').classList.add('hidden'); }
+$('menu-btn').onclick = openDrawer;
+$('drawer-overlay').onclick = closeDrawer;
+document.querySelectorAll('.drawer-item[data-mode]').forEach(b => b.onclick = () => { closeDrawer(); switchMode(b.dataset.mode); });
+$('drawer-theme').onclick = () => { $('theme-btn').click(); };
+$('drawer-account').onclick = () => { closeDrawer(); $('account-btn').click(); };
+
+function countUnfinished(){
+  let n = 0;
+  const q = loadQuizState();
+  if (q && q.quiz && q.idx < q.quiz.length) n++;
+  const c = loadCardsState();
+  if (c && c.deck && c.deck.length) n++;
+  libLoad('qf-courses').forEach(co => { if ((co.done||[]).filter(Boolean).length < (co.sessions||[]).length) n++; });
+  return n;
+}
+function refreshBadges(){
+  const n = countUnfinished();
+  const mb = $('menu-badge'), hb = $('hist-badge');
+  if (n > 0){ mb.textContent = n; mb.classList.remove('hidden'); hb.textContent = n; hb.classList.remove('hidden'); }
+  else { mb.classList.add('hidden'); hb.classList.add('hidden'); }
+  if ($('drawer-account')) $('drawer-account').textContent = authUser ? ('👤 ' + authUser) : '👤 Sign in';
+}
+setInterval(refreshBadges, 4000);
+refreshBadges();
+
+/* ---------------- SOLVE mode ---------------- */
+let solveLevel = 'std', solveFiles = [];
+document.querySelectorAll('#solve-levels .level').forEach(b => b.onclick = () => {
+  document.querySelectorAll('#solve-levels .level').forEach(x => x.classList.remove('active'));
+  b.classList.add('active');
+  solveLevel = b.dataset.level;
+});
+function renderSolveFiles(){
+  const isImg = n => /\.(png|jpe?g|webp|bmp)$/i.test(n);
+  $('solve-files').innerHTML = solveFiles.map((f,i) =>
+    `<span class="chip">${isImg(f.name) ? '🖼️' : '📄'} ${escH(f.name)}<button onclick="rmSolveFile(${i})">✕</button></span>`).join('');
+}
+window.rmSolveFile = i => { solveFiles.splice(i,1); renderSolveFiles(); };
+async function addSolveFiles(list){
+  for (const f of list){
+    const name = f.name && f.name !== 'image.jpg' ? f.name : `problem_${Date.now()}.jpg`;
+    solveFiles.push(await shrinkImage(new File([f], name, {type: f.type})));
+  }
+  renderSolveFiles();
+}
+$('solve-attach-btn').onclick = () => $('solve-file-input').click();
+$('solve-camera-btn').onclick = () => $('solve-camera-input').click();
+$('solve-file-input').onchange = () => { addSolveFiles($('solve-file-input').files); $('solve-file-input').value=''; };
+$('solve-camera-input').onchange = () => { addSolveFiles($('solve-camera-input').files); $('solve-camera-input').value=''; };
+
+$('solve-go').onclick = async () => {
+  const q = $('solve-q').value.trim();
+  if (!q && !solveFiles.length){
+    $('solve-error').textContent = '⚠️ Type a problem or snap a photo of it first.';
+    $('solve-error').classList.remove('hidden');
+    return;
+  }
+  $('solve-error').classList.add('hidden');
+  $('solve-go').disabled = true; $('solve-go').textContent = '🧮 Solving…';
+  $('solve-result').classList.remove('hidden');
+  $('solve-result').innerHTML = '<p><em>✍️ Working through it step by step…</em></p>';
+  try{
+    let opts;
+    if (solveFiles.length){
+      const fd = new FormData();
+      fd.append('question', q); fd.append('level', solveLevel);
+      solveFiles.forEach(f => fd.append('files', f));
+      opts = {method:'POST', body: fd};
+    } else {
+      opts = {method:'POST', headers:{'Content-Type':'application/json'},
+              body: JSON.stringify({question: q, level: solveLevel})};
+    }
+    const res = await fetch('/solve', opts);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Something went wrong.');
+    $('solve-result').innerHTML = mdToHtml(data.reply);
+    renderMath($('solve-result'));
+    $('solve-actions').classList.remove('hidden');
+  }catch(err){
+    $('solve-result').innerHTML = '';
+    $('solve-result').classList.add('hidden');
+    $('solve-error').textContent = '⚠️ ' + (err.message === 'Failed to fetch' ? 'Network problem — try again.' : err.message);
+    $('solve-error').classList.remove('hidden');
+  }finally{
+    $('solve-go').disabled = false; $('solve-go').textContent = 'Solve it 🧮';
+  }
+};
+$('solve-copy').onclick = function(){ copyText($('solve-result').innerText, this); };
+$('solve-new').onclick = () => {
+  $('solve-q').value = ''; solveFiles = []; renderSolveFiles();
+  $('solve-result').classList.add('hidden'); $('solve-result').innerHTML = '';
+  $('solve-actions').classList.add('hidden');
+};
 
 /* check for unfinished sessions on load */
 checkResumables();
