@@ -293,8 +293,11 @@
   .fcard-inner{position:relative; width:100%; height:100%; transition:transform .5s; transform-style:preserve-3d;}
   .fcard.flipped .fcard-inner{transform:rotateY(180deg);}
   .fface{position:absolute; inset:0; backface-visibility:hidden; border-radius:16px; display:flex;
-    align-items:center; justify-content:center; padding:26px; text-align:center; font-size:1.15rem; line-height:1.5;
+    align-items:center; justify-content:center; padding:22px; text-align:center; font-size:1.15rem; line-height:1.6;
     background:var(--card2); border:2px solid var(--border2);}
+  .fc-body{width:100%; max-height:100%; overflow-y:auto; overscroll-behavior:contain;}
+  .fc-body p{margin:0 0 8px;} .fc-body p:last-child{margin-bottom:0;}
+  .fc-body .katex{font-size:1.02em;}
   .fface.back{transform:rotateY(180deg); border-color:var(--accent2); background:rgba(0,212,166,.08);}
   .fc-meta{text-align:center; color:var(--muted); font-size:.9rem; margin-top:4px;}
 
@@ -323,7 +326,7 @@
     .qtext{font-size:1.05rem;}
     .opt{padding:12px 13px; font-size:.93rem;}
     .btn{padding:11px 18px; font-size:.98rem;}
-    .fcard{height:230px;}
+    .fcard{height:270px;}
     .lesson{max-height:60vh;}
   }
 
@@ -2118,8 +2121,10 @@ function renderCard(){
   const c = cardsDeck[cardIdx];
   $('fcard').classList.remove('flipped');
   setTimeout(() => {
-    $('fc-front').textContent = c.front;
-    $('fc-back').textContent = c.back;
+    // markdown + KaTeX pipeline, wrapped in a block-flow div so text and math
+    // read as sentences instead of being squeezed side-by-side by flexbox
+    $('fc-front').innerHTML = '<div class="fc-body">' + mdToHtml(c.front || '') + '</div>';
+    $('fc-back').innerHTML = '<div class="fc-body">' + mdToHtml(c.back || '') + '</div>';
     renderMath($('fc-front')); renderMath($('fc-back'));
   }, 150);
   $('fc-count').textContent = `Card ${cardIdx+1} of ${cardsDeck.length}`;
