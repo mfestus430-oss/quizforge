@@ -20,6 +20,8 @@ LEVEL_STYLE = {
            "formulas (each symbol explained in a friendly way), the real 'why'. Never dumb it down.",
     "teen": "High-school level language: clear wording, define every term in one line, one worked "
             "example. Keep full content depth — including the advanced parts — just accessibly worded.",
+    "detailed": "Deep university-level teaching: derivations, mechanisms, assumptions, edge cases "
+                "and an extended worked example, structured with headings — full rigor.",
     "facts": "Fact-sheet style: minimal prose. Teach through tight bullet-point facts, "
              "formulas in LaTeX with symbols explained in one line each, and 2-3 classic "
              "traps/exceptions. Scannable, no filler.",

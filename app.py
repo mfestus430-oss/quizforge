@@ -508,7 +508,7 @@ def course_ask():
     if not question and not files:
         return jsonify({"error": "Type a question or attach a file first."}), 400
     level = data.get("level") or c["level"]
-    if level not in ("std", "kid", "teen", "facts"):
+    if level not in ("std", "kid", "teen", "detailed", "facts"):
         level = c["level"]
 
     extra_parts = []
@@ -691,7 +691,7 @@ def teach_followup():
         return jsonify({"error": "Session expired — start a new lesson."}), 400
     # allow switching teaching level mid-lesson
     new_level = data.get("level")
-    if new_level in ("std", "kid", "teen", "facts"):
+    if new_level in ("std", "kid", "teen", "detailed", "facts"):
         sess["level"] = new_level
     if not question and not files:
         return jsonify({"error": "Type a question or attach a file first."}), 400

@@ -113,6 +113,15 @@
   .bottomnav button span:last-child{font-size:.66rem; font-weight:600;}
   .bottomnav button.active{color:var(--accent2);}
   details.customize summary{color:var(--muted); cursor:pointer; padding:6px 2px; user-select:none;}
+  /* ---------------- subtle mode selector + toast ---------------- */
+  .modesel{background:var(--card2); color:var(--text); border:1px solid var(--border2);
+    border-radius:10px; padding:6px 10px; font-size:.88rem; font-weight:600; cursor:pointer;}
+  .modesel:focus{outline:none; border-color:var(--accent);}
+  #toast{position:fixed; left:50%; bottom:calc(96px + env(safe-area-inset-bottom));
+    transform:translateX(-50%) translateY(16px); background:var(--card); border:1px solid var(--border);
+    color:var(--text); padding:10px 18px; border-radius:999px; font-size:.88rem; font-weight:600;
+    opacity:0; pointer-events:none; transition:.28s; z-index:70; box-shadow:0 10px 34px rgba(0,0,0,.45);}
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
   /* ---------------- splash entrance ---------------- */
   #splash{position:fixed; inset:0; z-index:80; display:flex; flex-direction:column; align-items:center;
     justify-content:center; background:var(--bg);
@@ -241,6 +250,16 @@
   .katex{font-size:1.06em;}
   .followup{display:flex; gap:10px; margin-top:16px;}
   .followup input{flex:1;}
+  /* unified tutor composer */
+  .composer{display:flex; align-items:flex-end; gap:8px; background:var(--card2);
+    border:1px solid var(--border2); border-radius:18px; padding:8px 10px; margin-top:6px;
+    transition:border-color .15s;}
+  .composer:focus-within{border-color:var(--accent);}
+  .composer textarea{flex:1; background:transparent; border:none; outline:none; color:var(--text);
+    font:inherit; font-size:16px; line-height:1.45; resize:none; min-height:46px; max-height:200px;
+    padding:7px 2px; overflow-y:auto;}
+  .composer .iconbtn{width:38px; height:38px; font-size:1.05rem; border-radius:12px;}
+  .composer textarea::placeholder{color:var(--muted);}
   .divider{border:none; border-top:1px solid var(--border); margin:18px 0;}
 
   /* block system: vertical chat of blocks; each block flips horizontally between levels */
@@ -520,12 +539,14 @@
 <div class="panel hidden" id="teach-panel">
   <div id="lesson-library"></div>
   <label style="display:block; margin-bottom:8px;">What do you want to learn? (or leave empty and just upload material)</label>
-  <input class="teach-input" id="topic" placeholder="e.g. fractions, standard deviation, photosynthesis…">
-  <div class="levels">
-    <button class="level active" data-level="std">Deep dive</button>
+  <input class="teach-input" id="topic" placeholder="What would you like to learn? — e.g. variance, photosynthesis…">
+  <div class="row" style="align-items:center; gap:8px; margin:0 0 8px;"><span class="hint">Explain as:</span><select class="modesel" id="teach-level-sel"><option value="std">Standard</option><option value="kid">Beginner</option><option value="teen">High School</option><option value="detailed">Detailed</option><option value="facts">Quick Facts</option></select></div>
+  <div class="levels hidden" id="teach-levels" style="margin:0;">
+    <button class="level active" data-level="std">Standard</button>
     <button class="level" data-level="kid">Beginner</button>
-    <button class="level" data-level="teen">School level</button>
-    <button class="level" data-level="facts">Quick revision</button>
+    <button class="level" data-level="teen">High School</button>
+    <button class="level" data-level="detailed">Detailed</button>
+    <button class="level" data-level="facts">Quick Facts</button>
   </div>
   <div class="drop" id="teach-drop" style="padding:26px 20px;">
     <div class="icon">📂</div>
@@ -543,23 +564,28 @@
 
 <!-- LESSON -->
 <div class="panel hidden" id="lesson-panel">
-  <div class="levels" id="lesson-levels" style="margin:0 0 8px;">
-    <span class="hint" style="align-self:center;">Explain as:</span>
-    <button class="level" data-level="std">Deep dive</button>
+  <div class="row" style="align-items:center; gap:8px; margin:0 0 8px;"><strong style="cursor:pointer; font-size:1.02rem;" onclick="switchMode('teach')" title="Back to Teach Me">← Teach Me</strong>
+      <span style="flex:1;"></span>
+      <span class="hint">Explain as:</span><select class="modesel" id="lesson-level-sel"><option value="std">Standard</option><option value="kid">Beginner</option><option value="teen">High School</option><option value="detailed">Detailed</option><option value="facts">Quick Facts</option></select></div>
+  <div class="levels hidden" style="margin:0;">
+    <button class="level" data-level="std">Standard</button>
     <button class="level" data-level="kid">Beginner</button>
-    <button class="level" data-level="teen">School level</button>
-    <button class="level" data-level="facts">Quick revision</button>
+    <button class="level" data-level="teen">High School</button>
+    <button class="level" data-level="detailed">Detailed</button>
+    <button class="level" data-level="facts">Quick Facts</button>
   </div>
   <div class="lesson" id="lesson"></div>
   <div class="filelist" id="followup-files"></div>
   <div id="reply-bar"></div>
-  <div class="followup">
-    <button class="btn ghost small" id="attach-btn" title="Attach files (PDF, slides, images…)">📎</button>
-    <button class="btn ghost small" id="camera-btn" title="Snap a photo with your camera">📷</button>
+  <div class="hint" style="margin:14px 0 0;">Ask your tutor</div>
+  <div class="composer">
+    <button class="iconbtn" id="attach-btn" title="Attach files (PDF, slides, images…)">📎</button>
+    <button class="iconbtn" id="camera-btn" title="Snap a photo with your camera">📷</button>
     <input type="file" id="followup-file-input" multiple accept=".pptx,.pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.webp,.bmp,.tif,.tiff,image/*" hidden>
     <input type="file" id="camera-input" accept="image/*" capture="environment" hidden>
-    <input class="teach-input" id="followup-q" placeholder="Ask a follow-up… or attach a photo/PDF">
-    <button class="btn" id="followup-send">Ask</button>
+    <textarea id="followup-q" rows="1" placeholder="Ask anything about this topic…"></textarea>
+    <button class="iconbtn" id="mic-btn" title="Voice input">🎤</button>
+    <button class="btn" id="followup-send" title="Send" style="align-self:flex-end;">➤</button>
   </div>
   <div class="row" id="reply-chips" style="flex-wrap:wrap; margin-top:8px;">
     <button class="btn ghost small" data-q="Yes, that made sense — continue.">Yes, continue</button>
@@ -579,11 +605,13 @@
   <div id="course-library"></div>
   <label style="display:block; margin-bottom:8px;">What should the course teach? (topic, or upload a book/slides/notes)</label>
   <input class="teach-input" id="course-topic" placeholder="e.g. probability, cell biology, financial accounting…">
-  <div class="levels" id="course-levels">
-    <button class="level active" data-level="std">Deep dive</button>
+  <div class="row" style="align-items:center; gap:8px; margin:0 0 8px;"><span class="hint">Explain as:</span><select class="modesel" id="course-sel"><option value="std">Standard</option><option value="kid">Beginner</option><option value="teen">High School</option><option value="detailed">Detailed</option><option value="facts">Quick Facts</option></select></div>
+  <div class="levels hidden" style="margin:0;">
+    <button class="level active" data-level="std">Standard</button>
     <button class="level" data-level="kid">Beginner</button>
-    <button class="level" data-level="teen">School level</button>
-    <button class="level" data-level="facts">Quick revision</button>
+    <button class="level" data-level="teen">High School</button>
+    <button class="level" data-level="detailed">Detailed</button>
+    <button class="level" data-level="facts">Quick Facts</button>
   </div>
   <div class="drop" id="course-drop" style="padding:26px 20px;">
     <div class="icon">📚</div>
@@ -615,23 +643,28 @@
 <div class="panel hidden" id="course-session">
   <div class="meta"><span id="cs-label"></span><span id="cs-step"></span></div>
   <div class="bar"><div id="cs-bar"></div></div>
-  <div class="levels" id="cs-levels" style="margin:0 0 8px;">
-    <span class="hint" style="align-self:center;">Explain as:</span>
-    <button class="level" data-level="std">Deep dive</button>
+  <div class="row" id="cs-sel-row" style="align-items:center; gap:8px; margin:0 0 8px;"><span class="hint">Explain as:</span><select class="modesel" id="cs-level-sel"><option value="std">Standard</option><option value="kid">Beginner</option><option value="teen">High School</option><option value="detailed">Detailed</option><option value="facts">Quick Facts</option></select></div>
+  <div class="levels hidden" style="margin:0;">
+    <button class="level" data-level="std">Standard</button>
     <button class="level" data-level="kid">Beginner</button>
-    <button class="level" data-level="teen">School level</button>
-    <button class="level" data-level="facts">Quick revision</button>
+    <button class="level" data-level="teen">High School</button>
+    <button class="level" data-level="detailed">Detailed</button>
+    <button class="level" data-level="facts">Quick Facts</button>
   </div>
   <div class="lesson" id="cs-lesson"></div>
   <div class="filelist" id="cs-files"></div>
   <div id="cs-reply-bar"></div>
-  <div class="followup" id="cs-askrow">
-    <button class="btn ghost small" id="cs-attach-btn" title="Attach files">📎</button>
-    <button class="btn ghost small" id="cs-camera-btn" title="Snap a photo">📷</button>
+  <div class="hint" style="margin:14px 0 0;">Ask your tutor</div>
+  <div id="cs-askrow">
+  <div class="composer">
+    <button class="iconbtn" id="cs-attach-btn" title="Attach files">📎</button>
+    <button class="iconbtn" id="cs-camera-btn" title="Snap a photo">📷</button>
     <input type="file" id="cs-file-input" multiple accept=".pptx,.pdf,.docx,.txt,.md,.png,.jpg,.jpeg,.webp,.bmp,.tif,.tiff,image/*" hidden>
     <input type="file" id="cs-camera-input" accept="image/*" capture="environment" hidden>
-    <input class="teach-input" id="cs-ask" placeholder="Confused? Ask… or attach a photo/PDF">
-    <button class="btn" id="cs-ask-send">Ask</button>
+    <textarea id="cs-ask" rows="1" placeholder="Ask about this lesson…"></textarea>
+    <button class="iconbtn" id="cs-mic-btn" title="Voice input">🎤</button>
+    <button class="btn" id="cs-ask-send" title="Send" style="align-self:flex-end;">➤</button>
+  </div>
   </div>
   <div id="cs-checkpoint" class="hidden">
     <div class="cp-title">Checkpoint — show me you got it:</div>
@@ -751,6 +784,8 @@
   <button id="bnav-menu"><span>☰</span><span>Menu</span></button>
 </nav>
 
+<div id="toast" role="status"></div>
+
 <script>
 const $ = id => document.getElementById(id);
 let files = [], quiz = [], idx = 0, score = 0, answers = [], engineUsed = 'ai';
@@ -765,6 +800,60 @@ function applyTheme(t){
 }
 $('theme-btn').onclick = () => applyTheme(document.body.classList.contains('light') ? 'dark' : 'light');
 applyTheme(localStorage.getItem('qf-theme') || 'dark');
+
+/* ---------------- composer: auto-grow, voice, smart Enter ---------------- */
+function autoGrow(el){ el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 200) + 'px'; }
+function resetComposer(id){ const el = $(id); if (el){ el.style.height = 'auto'; el.style.height = '46px'; } }
+['followup-q', 'cs-ask'].forEach(id => {
+  const el = $(id);
+  if (el) el.addEventListener('input', () => autoGrow(el));
+});
+function wireMic(btnId, targetId){
+  const btn = $(btnId), target = $(targetId);
+  if (!btn || !target) return;
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR){ btn.style.display = 'none'; return; }
+  let listening = false;
+  btn.onclick = () => {
+    if (listening) return;
+    const rec = new SR();
+    rec.lang = 'en-US'; rec.interimResults = true;
+    const base = target.value;
+    rec.onresult = e => {
+      let t = '';
+      for (const r of e.results) t += r[0].transcript;
+      target.value = (base ? base.trim() + ' ' : '') + t;
+      autoGrow(target);
+    };
+    rec.onend = () => { listening = false; btn.textContent = '🎤'; toast('Voice captured'); };
+    rec.onerror = () => { listening = false; btn.textContent = '🎤'; };
+    listening = true; btn.textContent = '🔴';
+    toast('Listening… speak now');
+    rec.start();
+  };
+}
+wireMic('mic-btn', 'followup-q');
+wireMic('cs-mic-btn', 'cs-ask');
+
+/* ---------------- toast + explanation-style selectors ---------------- */
+let toastTimer = null;
+function toast(msg){
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+function wireModeSel(selId, btnGroupId, extra){
+  const sel = $(selId);
+  if (!sel) return;
+  sel.onchange = () => {
+    const btn = document.querySelector('#' + btnGroupId + ' .level[data-level="' + sel.value + '"]');
+    if (btn) btn.click();
+    if (extra) extra(sel.value);
+    toast('Explanation style: ' + (LEVEL_NAMES[sel.value] || sel.value));
+  };
+}
 
 /* ---------------- panels & tabs ---------------- */
 const PANELS = ['home-panel','upload-panel','loading-panel','quiz-panel','result-panel','teach-panel','lesson-panel',
@@ -991,6 +1080,8 @@ function openLesson(id){
   document.querySelectorAll('#teach-panel .level, .levels .level').forEach(x => {
     if (x.closest('#teach-panel')) x.classList.toggle('active', x.dataset.level === teachLevel);
   });
+  if ($('teach-level-sel')) $('teach-level-sel').value = teachLevel;
+  if ($('lesson-level-sel')) $('lesson-level-sel').value = teachLevel;
   // new page format, or migrate an old single-html save
   if (l.blocks && l.blocks.length){
     CTX.teach.blocks = l.blocks;
@@ -1009,7 +1100,7 @@ function renderLessonLibrary(){
   $('lesson-library').innerHTML = lib.length === 0 ? '' :
     `<label style="display:block;margin-bottom:8px;">Your lessons — continue any of them:</label>` +
     lib.map(l => `<div class="lib-item">
-      <div class="linfo"><strong>🍎 ${l.topic.replace(/</g,'&lt;')}</strong><small>${ago(l.saved)} · ${l.level === 'std' ? 'Deep dive' : l.level === 'kid' ? 'Beginner' : l.level === 'teen' ? 'School level' : 'Quick revision'}</small></div>
+      <div class="linfo"><strong>🍎 ${l.topic.replace(/</g,'&lt;')}</strong><small>${ago(l.saved)} · ${({std:'Standard', kid:'Beginner', teen:'High School', detailed:'Detailed', facts:'Quick Facts'})[l.level] || 'Standard'}</small></div>
       <button class="btn small" onclick="openLesson('${l.id}')">Continue</button>
       <button class="btn ghost small" onclick="deleteLesson('${l.id}')">🗑️</button>
     </div>`).join('') + `<hr class="divider">`;
@@ -1220,7 +1311,9 @@ function addSimilarBtn(fb, q){
 if ($('reply-chips'))
   $('reply-chips').querySelectorAll('button').forEach(b => b.onclick = () => {
     $('followup-q').value = b.dataset.q;
+    autoGrow($('followup-q'));
     sendFollowup();
+    setTimeout(() => resetComposer('followup-q'), 60);
   });
 
 /* ---------------- quiz generation ---------------- */
@@ -1597,6 +1690,10 @@ document.querySelectorAll('.level').forEach(b => b.onclick = () => {
   b.classList.add('active');
   teachLevel = b.dataset.level;
 });
+wireModeSel('teach-level-sel', 'teach-levels');
+wireModeSel('course-sel', 'course-levels', v => { courseLevel = v; });
+wireModeSel('lesson-level-sel', 'lesson-levels');
+wireModeSel('cs-level-sel', 'cs-levels');
 
 $('teach-go').onclick = async () => {
   const topic = $('topic').value.trim();
@@ -1669,9 +1766,11 @@ $('teach-go').onclick = async () => {
    Vertical chat of blocks; each block flips horizontally between at most 4
    level versions: ✨ Standard · 🧒 Like I'm 7 · 🎒 High school · ⚡ Quick facts.
    Drag a block right (or tap ↩️) to reply to it, WhatsApp-style. */
-const LEVEL_NAMES = {std:'Deep dive', kid:'Beginner', teen:'School level', facts:'Quick revision'};
-const LEVEL_ASK = {std:'in your normal clear style ✨', kid:"like I'm 7 🧒", teen:'at high-school level 🎒', facts:'as a rapid fact sheet: key facts, formulas with symbols explained, and classic traps — no prose ⚡'};
-const MAX_VERSIONS = 4;   // hard cap: one page per level
+const LEVEL_NAMES = {std:'Standard', kid:'Beginner', teen:'High School', detailed:'Detailed', facts:'Quick Facts'};
+const LEVEL_ASK = {std:'in your normal clear balanced style', kid:'in very simple beginner language (short sentences, everyday analogies)',
+  teen:'at high-school level', detailed:'in FULL depth: advanced detail, derivations, mechanisms, edge cases and rigor — go deeper than before',
+  facts:'as a rapid fact sheet: key facts, formulas with symbols explained, and classic traps — no prose'};
+const MAX_VERSIONS = 6;   // hard cap: one page per level
 const CTX = {};
 const escH = t => String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;');
 
@@ -1969,8 +2068,10 @@ async function fetchFollowup(question, levelOverride, files){
 }
 
 function sendFollowup(){ return sendQuestion('teach'); }
-$('followup-send').onclick = sendFollowup;
-$('followup-q').addEventListener('keydown', e => { if (e.key === 'Enter') sendFollowup(); });
+$('followup-send').onclick = () => { sendFollowup(); setTimeout(() => resetComposer('followup-q'), 40); };
+$('followup-q').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendFollowup(); setTimeout(() => resetComposer('followup-q'), 40); }
+});
 $('lesson-new').onclick = () => { teachSession = null; currentLessonId = null; renderLessonLibrary(); show('teach-panel'); };
 $('lesson-quiz').onclick = () => {
   if (teachFilesStore.list.length){
@@ -2181,7 +2282,7 @@ function renderSessionLesson(){
   $('cs-lesson').scrollTop = 0;
   $('cs-checkpoint').classList.add('hidden');
   $('cs-askrow').classList.remove('hidden');
-  $('cs-levels').classList.remove('hidden');
+  $('cs-sel-row').classList.remove('hidden');
   $('cs-back').classList.remove('hidden');
   $('cs-continue').textContent = "I'm ready — test me";
   $('cs-continue').classList.remove('hidden');
@@ -2192,7 +2293,7 @@ function renderSessionLesson(){
 function startCheckpoint(){
   cs.cpIdx = 0; cs.cpCorrect = 0;
   $('cs-askrow').classList.add('hidden');
-  $('cs-levels').classList.add('hidden');
+  $('cs-sel-row').classList.add('hidden');
   $('cs-continue').classList.add('hidden');
   $('cs-checkpoint').classList.remove('hidden');
   renderCheckpointQ();
@@ -2309,7 +2410,9 @@ async function fetchCourseAsk(question, levelOverride, files){
   }
 }
 $('cs-ask-send').onclick = () => sendQuestion('course');
-$('cs-ask').addEventListener('keydown', e => { if (e.key === 'Enter') sendQuestion('course'); });
+$('cs-ask').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendQuestion('course'); setTimeout(() => resetComposer('cs-ask'), 40); }
+});
 
 $('course-quit').onclick = () => {
   if (confirm('Delete this course and its progress?')){
